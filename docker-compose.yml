@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=jake
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=skeleton
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./apps/Api
+      dockerfile: Dockerfile
+    container_name: api
+    depends_on:
+      - db
+    ports:
+      - "3030:3030"
+    environment:
+      - ASPNETCORE_URLS=http://+:3030
+      - ASPNETCORE_ENVIRONMENT=Development
+      # .NET config keys use double underscores to map nested JSON
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=skeleton;Username=jake;Password=${DB_PASSWORD}
+      - JwtSettings__Issuer=SkeletonApi
+      - JwtSettings__Audience=SkeletonFrontend
+      - JwtSettings__SecretKey=${JWT_SECRET}
+      - CORS__AllowedOrigins=${CORS_ORIGIN}
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: web
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=${API_BASE_URL}
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  pgdata:
