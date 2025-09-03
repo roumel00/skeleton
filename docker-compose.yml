@@ -2,9 +2,9 @@ services:
   db:
     image: postgres:16
     environment:
-      - POSTGRES_USER=jake
+      - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=skeleton
+      - POSTGRES_DB=${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
@@ -23,9 +23,9 @@ services:
       - ASPNETCORE_URLS=http://+:3030
       - ASPNETCORE_ENVIRONMENT=Development
       # .NET config keys use double underscores to map nested JSON
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=skeleton;Username=jake;Password=${DB_PASSWORD}
-      - JwtSettings__Issuer=SkeletonApi
-      - JwtSettings__Audience=SkeletonFrontend
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+      - JwtSettings__Issuer=${JWT_ISSUER}
+      - JwtSettings__Audience=${JWT_AUDIENCE}
       - JwtSettings__SecretKey=${JWT_SECRET}
       - CORS__AllowedOrigins=${CORS_ORIGIN}
 
