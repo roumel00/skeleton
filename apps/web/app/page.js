@@ -18,7 +18,7 @@ export default function Home() {
 
           <div className="bg-card border rounded-lg p-8 text-left space-y-6">
             <div>
-              <h2 className="text-2xl font-semibold text-foreground mb-4">What's Included</h2>
+              <h2 className="text-2xl font-semibold text-foreground mb-4">What&apos;s Included</h2>
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <h3 className="text-lg font-medium text-foreground">Frontend (Next.js)</h3>
