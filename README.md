@@ -40,7 +40,7 @@ API_BASE_URL=http://localhost:3030
 
 ### 3. Run with Docker
 ```bash
-docker compose up --build
+docker compose down && docker compose up --build
 ```
 
 ### 4. Access Your Apps
