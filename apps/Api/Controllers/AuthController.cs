@@ -164,4 +164,39 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("google/redirect")]
+    public IActionResult GoogleOAuthRedirect()
+    {
+        var redirectUrl = _authService.GetGoogleOAuthRedirectUrl();
+        return Redirect(redirectUrl);
+    }
+
+    [HttpGet("google/callback")]
+    public async Task<IActionResult> GoogleOAuthCallback([FromQuery] string? code, [FromQuery] string? error)
+    {
+        if (!string.IsNullOrEmpty(error))
+        {
+            // Handle OAuth error
+            var errorUrl = $"/login?error={Uri.EscapeDataString(error)}";
+            return Redirect(errorUrl);
+        }
+
+        if (string.IsNullOrEmpty(code))
+        {
+            var errorUrl = "/login?error=No authorization code received";
+            return Redirect(errorUrl);
+        }
+
+        var result = await _authService.HandleGoogleOAuthCallbackAsync(code);
+
+        if (!result.Success)
+        {
+            var errorUrl = $"/login?error={Uri.EscapeDataString(result.Message)}";
+            return Redirect(errorUrl);
+        }
+
+        // Redirect to dashboard on success
+        return Redirect("/dashboard");
+    }
+
 }

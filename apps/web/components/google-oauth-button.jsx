@@ -1,84 +1,23 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 
-const GoogleOAuthButton = ({ onSuccess, onError, disabled = false }) => {
-  const buttonRef = useRef(null);
-  const googleRef = useRef(null);
-
-  useEffect(() => {
-    const initializeGoogle = () => {
-      if (typeof window !== 'undefined' && window.google) {
-        googleRef.current = window.google;
-        
-        // Initialize Google Identity Services
-        window.google.accounts.id.initialize({
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-          callback: handleCredentialResponse,
-        });
-
-        // Render the button
-        if (buttonRef.current) {
-          window.google.accounts.id.renderButton(buttonRef.current, {
-            theme: 'outline',
-            size: 'large',
-            width: '100%',
-            text: 'signin_with',
-            shape: 'rectangular',
-          });
-        }
-      }
-    };
-
-    const handleCredentialResponse = async (response) => {
-      try {
-        if (response.credential) {
-          await onSuccess(response.credential);
-        } else {
-          onError && onError('No credential received from Google');
-        }
-      } catch (error) {
-        onError && onError(error.message || 'Google authentication failed');
-      }
-    };
-
-    // Load Google Identity Services script
-    if (!window.google) {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      script.onload = initializeGoogle;
-      document.head.appendChild(script);
-      
-      return () => {
-        document.head.removeChild(script);
-      };
-    } else {
-      initializeGoogle();
-    }
-  }, [onSuccess, onError]);
-
-  // Fallback button for when Google script is loading or unavailable
-  const handleFallbackClick = () => {
-    if (window.google && window.google.accounts) {
-      window.google.accounts.id.prompt();
-    } else {
-      onError && onError('Google authentication is not available');
-    }
+const GoogleOAuthButton = ({ disabled = false }) => {
+  const handleGoogleSignIn = () => {
+    if (disabled) return;
+    
+    // Redirect to the backend OAuth redirect endpoint
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3030';
+    window.location.href = `${apiBaseUrl}/api/auth/google/redirect`;
   };
 
   return (
-    <div className="w-full">
-      <div ref={buttonRef} className={disabled ? 'pointer-events-none opacity-50' : ''} />
-      
-      {/* Fallback button */}
+    <div className="w-full flex justify-center">
       <Button
         type="button"
         variant="outline"
-        className="w-full mt-2 hidden"
-        onClick={handleFallbackClick}
+        className="w-full"
+        onClick={handleGoogleSignIn}
         disabled={disabled}
       >
         <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">

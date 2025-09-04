@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const { signIn, signInWithGoogle, status, isAuthenticated } = useSession();
+  const { signIn, status, isAuthenticated } = useSession();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,22 +33,14 @@ export default function LoginPage() {
     setIsLoading(false);
   };
 
-  const handleGoogleSuccess = async (idToken) => {
-    setIsLoading(true);
-    setError('');
-
-    const result = await signInWithGoogle(idToken);
-    
-    if (!result.success) {
-      setError(result.error);
+  // Handle OAuth errors from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    if (error) {
+      setError(decodeURIComponent(error));
     }
-    
-    setIsLoading(false);
-  };
-
-  const handleGoogleError = (error) => {
-    setError(error);
-  };
+  }, []);
 
   if (status === 'loading') {
     return (
@@ -86,11 +78,7 @@ export default function LoginPage() {
 
           {/* Google OAuth Button */}
           <div className="mb-6">
-            <GoogleOAuthButton
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              disabled={isLoading}
-            />
+            <GoogleOAuthButton disabled={isLoading} />
           </div>
 
           <div className="relative mb-6">

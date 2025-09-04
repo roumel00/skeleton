@@ -174,30 +174,6 @@ export default function SessionProvider({ children }) {
     }
   };
 
-  const signInWithGoogle = async (idToken) => {
-    try {
-      const res = await fetch(API_BASE_URL + '/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ idToken }),
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-        setStatus('authenticated');
-        router.replace('/dashboard');
-        return { success: true };
-      } else {
-        const error = await res.json();
-        return { success: false, error: error.message || 'Google authentication failed' };
-      }
-    } catch (error) {
-      return { success: false, error: 'Network error' };
-    }
-  };
-
   const value = useMemo(() => ({
     user,
     status,
@@ -208,8 +184,7 @@ export default function SessionProvider({ children }) {
     signUp,
     forgotPassword,
     resetPassword,
-    signInWithGoogle,
-  }), [user, status, refresh, signOut, signIn, signUp, forgotPassword, resetPassword, signInWithGoogle]);
+  }), [user, status, refresh, signOut, signIn, signUp, forgotPassword, resetPassword]);
 
   if (status === 'loading') {
     return (
