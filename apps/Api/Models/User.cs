@@ -50,6 +50,8 @@ public class UserInfoDto
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
+    public string? ProfilePictureUrl { get; set; }
+    public bool IsOAuthUser { get; set; }
 }
 
 public class ForgotPasswordDto
@@ -71,4 +73,10 @@ public class ResetPasswordDto
     [Required]
     [Compare("NewPassword")]
     public string ConfirmPassword { get; set; } = string.Empty;
+}
+
+public class GoogleOAuthDto
+{
+    [Required]
+    public string IdToken { get; set; } = string.Empty;
 }

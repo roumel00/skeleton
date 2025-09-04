@@ -44,6 +44,7 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_BASE_URL=${API_BASE_URL}
+      - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
     volumes:
       - ./apps/web:/app
       - /app/node_modules

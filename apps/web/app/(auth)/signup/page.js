@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import GoogleOAuthButton from '@/components/google-oauth-button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function SignupPage() {
-  const { signUp, status, isAuthenticated } = useSession();
+  const { signUp, signInWithGoogle, status, isAuthenticated } = useSession();
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -58,6 +60,23 @@ export default function SignupPage() {
     setIsLoading(false);
   };
 
+  const handleGoogleSuccess = async (idToken) => {
+    setIsLoading(true);
+    setError('');
+
+    const result = await signInWithGoogle(idToken);
+    
+    if (!result.success) {
+      setError(result.error);
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleGoogleError = (error) => {
+    setError(error);
+  };
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -86,13 +105,31 @@ export default function SignupPage() {
         </CardHeader>
         
         <CardContent>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-6">
+              {error}
+            </div>
+          )}
+
+          {/* Google OAuth Button */}
+          <div className="mb-6">
+            <GoogleOAuthButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+            </div>
+          </div>
+
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
-            
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email address</Label>

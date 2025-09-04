@@ -142,4 +142,26 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("google")]
+    public async Task<ActionResult<AuthResponseDto>> GoogleOAuth([FromBody] GoogleOAuthDto googleOAuthDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new AuthResponseDto
+            {
+                Success = false,
+                Message = "Invalid input data",
+            });
+        }
+
+        var result = await _authService.GoogleOAuthAsync(googleOAuthDto);
+
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+
 }
