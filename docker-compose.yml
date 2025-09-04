@@ -23,7 +23,7 @@ services:
       - ASPNETCORE_URLS=http://+:3030
       - ASPNETCORE_ENVIRONMENT=Development
       # .NET config keys use double underscores to map nested JSON
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+      - ConnectionStrings__DefaultConnection=${CONNECTION_STRING}
       - JwtSettings__Issuer=${JWT_ISSUER}
       - JwtSettings__Audience=${JWT_AUDIENCE}
       - JwtSettings__SecretKey=${JWT_SECRET}

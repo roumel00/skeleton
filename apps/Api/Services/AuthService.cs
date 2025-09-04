@@ -128,7 +128,7 @@ public class AuthService : IAuthService
                 {
                     HttpOnly = true,
                     Secure = context.Request.IsHttps,
-                    SameSite = SameSiteMode.Strict,
+                    SameSite = SameSiteMode.None,
                     Expires = DateTime.UtcNow.AddHours(24)
                 };
                 context.Response.Cookies.Append("AuthToken", token, cookieOptions);

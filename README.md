@@ -68,12 +68,52 @@ skeleton-project/
 - ✅ PostgreSQL database
 - ✅ Ready-to-extend architecture
 
+## Deployment
+
+### Backend & Database on Fly.io
+
+The backend API and PostgreSQL database are deployed to Fly.io. The API is configured to run on port 3030 and includes:
+
+- JWT authentication with HTTP-only cookies
+- CORS configuration for cross-origin requests
+- PostgreSQL database with Entity Framework Core
+- Automatic database creation on startup
+
+### Frontend on Vercel
+
+The Next.js frontend is deployed to Vercel and configured to communicate with the Fly.io API.
+
+### Required Environment Variables
+
+To deploy your own version, you must set the following environment variables in Fly.io:
+
+```bash
+# Set database connection string
+fly secrets set ConnectionStrings__DefaultConnection="your_postgres_connection_string"
+
+# Set JWT configuration
+fly secrets set JwtSettings__SecretKey="your_jwt_secret_key"
+fly secrets set JwtSettings__Issuer="your-app-name"
+fly secrets set JwtSettings__Audience="your-app-users"
+
+# Set CORS allowed origins (your Vercel app URL)
+fly secrets set CORS__AllowedOrigins="https://your-vercel-app.vercel.app"
+```
+
+### Frontend Environment Variables
+
+For your Vercel deployment, set this environment variable:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=https://your-fly-app-name.fly.dev
+```
+
 ## Next Steps
 
 1. Customize the authentication logic
 2. Add your business entities and endpoints
 3. Style your components
-4. Deploy to your preferred platform
+4. Set up your own Fly.io and Vercel deployments with the required environment variables
 
 ---
 
