@@ -82,6 +82,9 @@ public class AuthService : IAuthService
             // Generate JWT token
             var token = GenerateJwtToken(user);
 
+            // Set JWT token as HTTP-only cookie (same as login)
+            SetAuthCookie(token);
+
             return new AuthResponseDto
             {
                 Success = true,
@@ -135,20 +138,7 @@ public class AuthService : IAuthService
             var token = GenerateJwtToken(user);
 
             // Set JWT token as HTTP-only cookie
-            var context = _httpContextAccessor.HttpContext;
-            if (context != null)
-            {
-                var domain = _configuration["Frontend:Domain"] ?? "localhost";
-                var cookieOptions = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = context.Request.IsHttps,
-                    SameSite = context.Request.IsHttps ? SameSiteMode.None : SameSiteMode.Lax,
-                    Expires = DateTime.UtcNow.AddHours(24),
-                    Domain = domain
-                };
-                context.Response.Cookies.Append("AuthToken", token, cookieOptions);
-            }
+            SetAuthCookie(token);
 
             return new AuthResponseDto
             {
@@ -409,6 +399,32 @@ public class AuthService : IAuthService
                 Message = $"An error occurred: {ex.Message}"
             };
         }
+    }
+
+    private void SetAuthCookie(string token)
+    {
+        var context = _httpContextAccessor.HttpContext;
+        if (context == null) return;
+
+        // Check if this is a cross-origin request
+        var isHttps = context.Request.IsHttps;
+        var origin = context.Request.Headers["Origin"].FirstOrDefault();
+        var isCrossOrigin = !string.IsNullOrEmpty(origin) && 
+                           !origin.Contains(context.Request.Host.Host);
+
+        // For cross-origin HTTPS requests, we need SameSite=None and Secure=true
+        var useSameSiteNone = isHttps && isCrossOrigin;
+
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = useSameSiteNone, // Must be true for SameSite=None
+            SameSite = useSameSiteNone ? SameSiteMode.None : SameSiteMode.Lax,
+            Expires = DateTime.UtcNow.AddHours(24),
+            Path = "/"
+        };
+
+        context.Response.Cookies.Append("AuthToken", token, cookieOptions);
     }
 
     private string GenerateSecureToken()

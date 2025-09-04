@@ -29,7 +29,6 @@ services:
       - JwtSettings__SecretKey=${JWT_SECRET}
       - CORS__AllowedOrigins=${CORS_ORIGIN}
       - Resend__ApiKey=${RESEND_API_KEY}
-      - App__BaseUrl=${APP_BASE_URL}
       - App__FromEmail=${APP_FROM_EMAIL}
       - Frontend__BaseUrl=${FRONTEND_BASE_URL}
       - Frontend__Domain=${FRONTEND_DOMAIN}

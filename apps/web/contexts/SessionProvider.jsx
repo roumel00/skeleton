@@ -41,7 +41,6 @@ export default function SessionProvider({ children }) {
 
   // Handle redirects for authenticated users on auth pages
   useEffect(() => {
-    console.log('status', status);
     if (status === 'authenticated' && user) {
       const authPages = ['/login', '/signup', '/forgot-password', '/reset-password'];
       // Check if current path starts with any auth page (to handle /reset-password with query params)

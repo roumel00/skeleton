@@ -77,7 +77,26 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public ActionResult Logout()
     {
-        Response.Cookies.Delete("AuthToken");
+        // Check if this is a cross-origin request
+        var isHttps = Request.IsHttps;
+        var origin = Request.Headers["Origin"].FirstOrDefault();
+        var isCrossOrigin = !string.IsNullOrEmpty(origin) && 
+                           !origin.Contains(Request.Host.Host);
+
+        // For cross-origin HTTPS requests, we need SameSite=None and Secure=true
+        var useSameSiteNone = isHttps && isCrossOrigin;
+
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = useSameSiteNone, // Must be true for SameSite=None
+            SameSite = useSameSiteNone ? SameSiteMode.None : SameSiteMode.Lax,
+            Expires = DateTime.UtcNow.AddDays(-1), // Set to past date to delete
+            Path = "/"
+        };
+
+        Response.Cookies.Append("AuthToken", "", cookieOptions);
+        
         return Ok(new AuthResponseDto
         {
             Success = true,
@@ -122,4 +141,5 @@ public class AuthController : ControllerBase
 
         return Ok(result);
     }
+
 }
