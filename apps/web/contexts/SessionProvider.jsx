@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const SessionContext = createContext(undefined);
@@ -10,6 +10,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 
 export default function SessionProvider({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState(null);
   const [status, setStatus] = useState('loading');
 
@@ -37,6 +38,19 @@ export default function SessionProvider({ children }) {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // Handle redirects for authenticated users on auth pages
+  useEffect(() => {
+    console.log('status', status);
+    if (status === 'authenticated' && user) {
+      const authPages = ['/login', '/signup', '/forgot-password', '/reset-password'];
+      // Check if current path starts with any auth page (to handle /reset-password with query params)
+      const isOnAuthPage = authPages.some(page => pathname.startsWith(page));
+      if (isOnAuthPage) {
+        router.replace('/dashboard');
+      }
+    }
+  }, [status, user, pathname, router]);
 
   const refresh = async () => {
     setStatus('loading');
@@ -121,6 +135,46 @@ export default function SessionProvider({ children }) {
     }
   };
 
+  const forgotPassword = async (email) => {
+    try {
+      const res = await fetch(API_BASE_URL + '/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        return { success: true, message: data.message };
+      } else {
+        const error = await res.json();
+        return { success: false, error: error.message || 'Failed to send reset email' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const resetPassword = async (token, newPassword, confirmPassword) => {
+    try {
+      const res = await fetch(API_BASE_URL + '/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword, confirmPassword }),
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        return { success: true, message: data.message };
+      } else {
+        const error = await res.json();
+        return { success: false, error: error.message || 'Failed to reset password' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Network error' };
+    }
+  };
+
   const value = useMemo(() => ({
     user,
     status,
@@ -129,7 +183,9 @@ export default function SessionProvider({ children }) {
     signOut,
     signIn,
     signUp,
-  }), [user, status, refresh, signOut, signIn, signUp]);
+    forgotPassword,
+    resetPassword,
+  }), [user, status, refresh, signOut, signIn, signUp, forgotPassword, resetPassword]);
 
   if (status === 'loading') {
     return (

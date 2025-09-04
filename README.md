@@ -36,6 +36,9 @@ CORS_ORIGIN=http://localhost:3000
 
 # API Configuration
 API_BASE_URL=http://localhost:3030
+
+# Email Service (for password reset)
+RESEND_API_KEY=your_resend_api_key_here
 ```
 
 ### 3. Run with Docker
@@ -61,6 +64,7 @@ skeleton-project/
 
 - ✅ User registration and login
 - ✅ JWT authentication
+- ✅ Password reset functionality with email
 - ✅ Protected API endpoints
 - ✅ Modern React components
 - ✅ Responsive UI with Tailwind CSS
@@ -98,6 +102,9 @@ fly secrets set JwtSettings__Audience="your-app-users"
 
 # Set CORS allowed origins (your Vercel app URL)
 fly secrets set CORS__AllowedOrigins="https://your-vercel-app.vercel.app"
+
+# Set Resend API key for password reset emails
+fly secrets set Resend__ApiKey="your_resend_api_key"
 ```
 
 ### Frontend Environment Variables
@@ -108,12 +115,24 @@ For your Vercel deployment, set this environment variable:
 NEXT_PUBLIC_API_BASE_URL=https://your-fly-app-name.fly.dev
 ```
 
+## Email Service Setup
+
+This project uses [Resend](https://resend.com) for sending password reset emails. To enable the password reset functionality:
+
+1. **Sign up for Resend**: Create an account at [resend.com](https://resend.com)
+2. **Get your API key**: Copy your API key from the Resend dashboard
+3. **Set the environment variable**: Add `RESEND_API_KEY=your_api_key_here` to your `.env` file
+4. **For production**: Set the `Resend__ApiKey` secret in Fly.io as shown in the deployment section
+
+Without the Resend API key, the password reset functionality will not work and will throw an error when users try to reset their passwords.
+
 ## Next Steps
 
-1. Customize the authentication logic
-2. Add your business entities and endpoints
-3. Style your components
-4. Set up your own Fly.io and Vercel deployments with the required environment variables
+1. Get a Resend API key and configure it for password reset emails
+2. Customize the authentication logic
+3. Add your business entities and endpoints
+4. Style your components
+5. Set up your own Fly.io and Vercel deployments with the required environment variables
 
 ---
 

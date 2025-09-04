@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Resend;
 using Api.Data;
 using Api.Entities;
 using Api.Services;
@@ -76,8 +77,21 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Configure Resend
+var resendApiKey = builder.Configuration["Resend:ApiKey"] 
+    ?? throw new InvalidOperationException("Resend API key is not configured. Set RESEND_API_KEY environment variable or Resend:ApiKey in configuration.");
+
+builder.Services.AddOptions();
+builder.Services.AddHttpClient();
+builder.Services.Configure<ResendClientOptions>(options =>
+{
+    options.ApiToken = resendApiKey;
+});
+builder.Services.AddScoped<IResend, ResendClient>();
+
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddHttpContextAccessor();
 
 // Add CORS
@@ -111,11 +125,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Ensure database is created
+// Apply database migrations
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.EnsureCreated();
+    context.Database.Migrate();
 }
 
 app.Run();
