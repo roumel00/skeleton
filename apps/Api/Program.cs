@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Text;
@@ -85,13 +84,6 @@ builder.Services.AddAuthentication(options =>
             return Task.CompletedTask;
         }
     };
-})
-.AddGoogle(options =>
-{
-    options.ClientId = builder.Configuration["GoogleOAuth:ClientId"] ?? 
-        throw new InvalidOperationException("Google OAuth ClientId is not configured");
-    options.ClientSecret = builder.Configuration["GoogleOAuth:ClientSecret"] ?? 
-        throw new InvalidOperationException("Google OAuth ClientSecret is not configured");
 });
 
 // Configure Resend

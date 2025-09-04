@@ -32,17 +32,11 @@ services:
       - App__FromEmail=${APP_FROM_EMAIL}
       - Frontend__BaseUrl=${FRONTEND_BASE_URL}
       - Frontend__Domain=${FRONTEND_DOMAIN}
-      - GoogleOAuth__ClientId=${GOOGLE_CLIENT_ID}
-      - GoogleOAuth__ClientSecret=${GOOGLE_CLIENT_SECRET}
-      - GoogleOAuth__RedirectUri=${GOOGLE_OAUTH_REDIRECT_URI}
 
   web:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_BASE_URL=${API_BASE_URL}
-        - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
     container_name: web
     depends_on:
       - api
@@ -50,7 +44,6 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_BASE_URL=${API_BASE_URL}
-      - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
     volumes:
       - ./apps/web:/app
       - /app/node_modules

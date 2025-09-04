@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Api.Entities;
 using Api.Models;
 using Api.Data;
-using Google.Apis.Auth;
 
 namespace Api.Services;
 
@@ -19,9 +18,6 @@ public interface IAuthService
     Task<AuthResponseDto> GetCurrentUserAsync();
     Task<AuthResponseDto> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto);
     Task<AuthResponseDto> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
-    Task<AuthResponseDto> GoogleOAuthAsync(GoogleOAuthDto googleOAuthDto);
-    string GetGoogleOAuthRedirectUrl();
-    Task<AuthResponseDto> HandleGoogleOAuthCallbackAsync(string code);
 }
 
 public class AuthService : IAuthService
@@ -100,9 +96,7 @@ public class AuthService : IAuthService
                     Email = user.Email!,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    CreatedAt = user.CreatedAt,
-                    ProfilePictureUrl = user.ProfilePictureUrl,
-                    IsOAuthUser = user.IsOAuthUser
+                    CreatedAt = user.CreatedAt
                 }
             };
         }
@@ -157,9 +151,7 @@ public class AuthService : IAuthService
                     Email = user.Email!,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    CreatedAt = user.CreatedAt,
-                    ProfilePictureUrl = user.ProfilePictureUrl,
-                    IsOAuthUser = user.IsOAuthUser
+                    CreatedAt = user.CreatedAt
                 }
             };
         }
@@ -260,9 +252,7 @@ public class AuthService : IAuthService
                     Email = user.Email!,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    CreatedAt = user.CreatedAt,
-                    ProfilePictureUrl = user.ProfilePictureUrl,
-                    IsOAuthUser = user.IsOAuthUser
+                    CreatedAt = user.CreatedAt
                 }
             };
         }
@@ -449,299 +439,5 @@ public class AuthService : IAuthService
             .Replace('+', '-')
             .Replace('/', '_')
             .Replace("=", "");
-    }
-
-    public async Task<AuthResponseDto> GoogleOAuthAsync(GoogleOAuthDto googleOAuthDto)
-    {
-        try
-        {
-            // Verify the Google ID token
-            var googleClientId = _configuration["GoogleOAuth:ClientId"] ?? 
-                throw new InvalidOperationException("Google OAuth ClientId is not configured");
-
-            var payload = await GoogleJsonWebSignature.ValidateAsync(googleOAuthDto.IdToken, new GoogleJsonWebSignature.ValidationSettings
-            {
-                Audience = new[] { googleClientId }
-            });
-
-            if (payload == null)
-            {
-                return new AuthResponseDto
-                {
-                    Success = false,
-                    Message = "Invalid Google token"
-                };
-            }
-
-            // Check if user already exists by Google ID or email
-            var existingUser = await _userManager.Users
-                .FirstOrDefaultAsync(u => u.GoogleId == payload.Subject || u.Email == payload.Email);
-
-            User user;
-
-            if (existingUser != null)
-            {
-                // Update existing user with Google ID if not set
-                if (string.IsNullOrEmpty(existingUser.GoogleId))
-                {
-                    existingUser.GoogleId = payload.Subject;
-                    existingUser.IsOAuthUser = true;
-                    existingUser.ProfilePictureUrl = payload.Picture;
-                    existingUser.UpdatedAt = DateTime.UtcNow;
-                    await _userManager.UpdateAsync(existingUser);
-                }
-                user = existingUser;
-            }
-            else
-            {
-                // Create new user
-                user = new User
-                {
-                    UserName = payload.Email,
-                    Email = payload.Email,
-                    FirstName = payload.GivenName ?? "",
-                    LastName = payload.FamilyName ?? "",
-                    EmailConfirmed = true, // Google users have verified emails
-                    GoogleId = payload.Subject,
-                    ProfilePictureUrl = payload.Picture,
-                    IsOAuthUser = true
-                };
-
-                var result = await _userManager.CreateAsync(user);
-
-                if (!result.Succeeded)
-                {
-                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                    return new AuthResponseDto
-                    {
-                        Success = false,
-                        Message = $"Failed to create user: {errors}"
-                    };
-                }
-            }
-
-            // Generate JWT token
-            var token = GenerateJwtToken(user);
-
-            // Set JWT token as HTTP-only cookie
-            SetAuthCookie(token);
-
-            return new AuthResponseDto
-            {
-                Success = true,
-                Message = "Google OAuth authentication successful",
-                Token = token,
-                User = new UserInfoDto
-                {
-                    Id = user.Id,
-                    Email = user.Email!,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    CreatedAt = user.CreatedAt,
-                    ProfilePictureUrl = user.ProfilePictureUrl,
-                    IsOAuthUser = user.IsOAuthUser
-                }
-            };
-        }
-        catch (Exception ex)
-        {
-            return new AuthResponseDto
-            {
-                Success = false,
-                Message = $"An error occurred during Google authentication: {ex.Message}"
-            };
-        }
-    }
-
-    public string GetGoogleOAuthRedirectUrl()
-    {
-        var clientId = _configuration["GoogleOAuth:ClientId"] ?? 
-            throw new InvalidOperationException("Google OAuth ClientId is not configured");
-        
-        var redirectUri = _configuration["GoogleOAuth:RedirectUri"] ?? 
-            throw new InvalidOperationException("Google OAuth RedirectUri is not configured");
-
-        var scopes = "openid email profile";
-        var state = Guid.NewGuid().ToString(); // You might want to store this for validation
-
-        var baseUrl = "https://accounts.google.com/o/oauth2/v2/auth";
-        var parameters = new List<string>
-        {
-            $"client_id={Uri.EscapeDataString(clientId)}",
-            $"redirect_uri={Uri.EscapeDataString(redirectUri)}",
-            $"scope={Uri.EscapeDataString(scopes)}",
-            $"response_type=code",
-            $"state={Uri.EscapeDataString(state)}",
-            "access_type=offline",
-            "prompt=select_account"
-        };
-
-        return $"{baseUrl}?{string.Join("&", parameters)}";
-    }
-
-    public async Task<AuthResponseDto> HandleGoogleOAuthCallbackAsync(string code)
-    {
-        try
-        {
-            var clientId = _configuration["GoogleOAuth:ClientId"] ?? 
-                throw new InvalidOperationException("Google OAuth ClientId is not configured");
-            
-            var clientSecret = _configuration["GoogleOAuth:ClientSecret"] ?? 
-                throw new InvalidOperationException("Google OAuth ClientSecret is not configured");
-            
-            var redirectUri = _configuration["GoogleOAuth:RedirectUri"] ?? 
-                throw new InvalidOperationException("Google OAuth RedirectUri is not configured");
-
-            // Exchange authorization code for access token
-            using var httpClient = new HttpClient();
-            var tokenRequest = new FormUrlEncodedContent(new[]
-            {
-                new KeyValuePair<string, string>("client_id", clientId),
-                new KeyValuePair<string, string>("client_secret", clientSecret),
-                new KeyValuePair<string, string>("code", code),
-                new KeyValuePair<string, string>("grant_type", "authorization_code"),
-                new KeyValuePair<string, string>("redirect_uri", redirectUri)
-            });
-
-            var tokenResponse = await httpClient.PostAsync("https://oauth2.googleapis.com/token", tokenRequest);
-            var tokenContent = await tokenResponse.Content.ReadAsStringAsync();
-
-            if (!tokenResponse.IsSuccessStatusCode)
-            {
-                return new AuthResponseDto
-                {
-                    Success = false,
-                    Message = "Failed to exchange authorization code for access token"
-                };
-            }
-
-            // Parse the token response
-            var tokenData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(tokenContent);
-            var accessToken = tokenData?["access_token"]?.ToString();
-
-            if (string.IsNullOrEmpty(accessToken))
-            {
-                return new AuthResponseDto
-                {
-                    Success = false,
-                    Message = "No access token received from Google"
-                };
-            }
-
-            // Get user info from Google
-            var userInfoRequest = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/oauth2/v2/userinfo");
-            userInfoRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-
-            var userInfoResponse = await httpClient.SendAsync(userInfoRequest);
-            var userInfoContent = await userInfoResponse.Content.ReadAsStringAsync();
-
-            if (!userInfoResponse.IsSuccessStatusCode)
-            {
-                return new AuthResponseDto
-                {
-                    Success = false,
-                    Message = "Failed to get user information from Google"
-                };
-            }
-
-            // Parse user info
-            var userInfo = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(userInfoContent);
-            var email = userInfo?["email"]?.ToString();
-            var name = userInfo?["name"]?.ToString();
-            var picture = userInfo?["picture"]?.ToString();
-            var googleId = userInfo?["id"]?.ToString();
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
-            {
-                return new AuthResponseDto
-                {
-                    Success = false,
-                    Message = "Invalid user information received from Google"
-                };
-            }
-
-            // Parse name into first and last name
-            var nameParts = name?.Split(' ', 2) ?? new[] { "", "" };
-            var firstName = nameParts[0] ?? "";
-            var lastName = nameParts.Length > 1 ? nameParts[1] : "";
-
-            // Check if user already exists by Google ID or email
-            var existingUser = await _userManager.Users
-                .FirstOrDefaultAsync(u => u.GoogleId == googleId || u.Email == email);
-
-            User user;
-
-            if (existingUser != null)
-            {
-                // Update existing user with Google ID if not set
-                if (string.IsNullOrEmpty(existingUser.GoogleId))
-                {
-                    existingUser.GoogleId = googleId;
-                    existingUser.IsOAuthUser = true;
-                    existingUser.ProfilePictureUrl = picture;
-                    existingUser.UpdatedAt = DateTime.UtcNow;
-                    await _userManager.UpdateAsync(existingUser);
-                }
-                user = existingUser;
-            }
-            else
-            {
-                // Create new user
-                user = new User
-                {
-                    UserName = email,
-                    Email = email,
-                    FirstName = firstName,
-                    LastName = lastName,
-                    EmailConfirmed = true, // Google users have verified emails
-                    GoogleId = googleId,
-                    ProfilePictureUrl = picture,
-                    IsOAuthUser = true
-                };
-
-                var result = await _userManager.CreateAsync(user);
-
-                if (!result.Succeeded)
-                {
-                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                    return new AuthResponseDto
-                    {
-                        Success = false,
-                        Message = $"Failed to create user: {errors}"
-                    };
-                }
-            }
-
-            // Generate JWT token
-            var token = GenerateJwtToken(user);
-
-            // Set JWT token as HTTP-only cookie
-            SetAuthCookie(token);
-
-            return new AuthResponseDto
-            {
-                Success = true,
-                Message = "Google OAuth authentication successful",
-                Token = token,
-                User = new UserInfoDto
-                {
-                    Id = user.Id,
-                    Email = user.Email!,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    CreatedAt = user.CreatedAt,
-                    ProfilePictureUrl = user.ProfilePictureUrl,
-                    IsOAuthUser = user.IsOAuthUser
-                }
-            };
-        }
-        catch (Exception ex)
-        {
-            return new AuthResponseDto
-            {
-                Success = false,
-                Message = $"An error occurred during Google OAuth callback: {ex.Message}"
-            };
-        }
     }
 }
