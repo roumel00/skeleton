@@ -103,8 +103,13 @@ fly secrets set JwtSettings__Audience="your-app-users"
 # Set CORS allowed origins (your Vercel app URL)
 fly secrets set CORS__AllowedOrigins="https://your-vercel-app.vercel.app"
 
-# Set Resend API key for password reset emails
+# Set Resend API key and verified email for password reset emails
 fly secrets set Resend__ApiKey="your_resend_api_key"
+fly secrets set App__FromEmail=noreply@notifications.jobsign.au
+
+# Set frontend urls
+fly secrets set Frontend__BaseUrl=https://skeleton-orcin.vercel.app/
+fly secrets set Frontend__Domain=skeleton-orcin.vercel.app
 ```
 
 ### Frontend Environment Variables
@@ -133,6 +138,13 @@ Without the Resend API key, the password reset functionality will not work and w
 3. Add your business entities and endpoints
 4. Style your components
 5. Set up your own Fly.io and Vercel deployments with the required environment variables
+
+## Prod vs. Dev
+
+To push to production, link the apps/web to a vercel project and every git push will redeploy on vercel.
+To push the backend, navigate to apps/Api and run `fly deploy` (requres cli set up)
+
+To start developing, run docker compose down && docker compose up --build to deploy changes to a dev environment.
 
 ---
 
