@@ -35,6 +35,8 @@ export default function SessionProvider({ children }) {
           setStatus('unauthenticated');
         }
       }
+      console.log('DEBUG: status: ', status);
+      console.log('DEBUG: user: ', user);
     })();
     return () => { cancelled = true; };
   }, []);
