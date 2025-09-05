@@ -24,6 +24,14 @@ public class ApplicationDbContext : IdentityDbContext<User>
             entity.Property(e => e.LastName).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("NOW()");
+            
+            // Google OAuth fields
+            entity.Property(e => e.GoogleId).HasMaxLength(100);
+            entity.Property(e => e.ProfilePictureUrl).HasMaxLength(500);
+            entity.Property(e => e.IsGoogleUser).HasDefaultValue(false);
+            
+            // Create unique index for GoogleId (when not null)
+            entity.HasIndex(e => e.GoogleId).IsUnique().HasFilter("\"GoogleId\" IS NOT NULL");
         });
 
         // Configure PasswordResetToken entity

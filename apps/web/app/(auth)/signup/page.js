@@ -7,6 +7,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import GoogleOAuthButton from '@/components/google-oauth-button';
+import { Separator } from '@/components/ui/separator';
 
 export default function SignupPage() {
   const { signUp, status, isAuthenticated } = useSession();
@@ -84,6 +86,9 @@ export default function SignupPage() {
         </CardHeader>
         
         <CardContent>
+          <GoogleOAuthButton />
+          <Separator className="my-4" />
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">

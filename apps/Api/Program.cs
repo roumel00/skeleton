@@ -86,6 +86,17 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
+var googleClientId = builder.Configuration["GoogleOAuth:ClientId"];
+var googleClientSecret = builder.Configuration["GoogleOAuth:ClientSecret"];
+var googleRedirectUri = builder.Configuration["GoogleOAuth:RedirectUri"];
+
+if (string.IsNullOrEmpty(googleClientId) || string.IsNullOrEmpty(googleClientSecret) || string.IsNullOrEmpty(googleRedirectUri))
+{
+    Console.WriteLine("Warning: Google OAuth configuration is missing. Google OAuth will not be available.");
+    Console.WriteLine("Please set GoogleOAuth:ClientId, GoogleOAuth:ClientSecret, and GoogleOAuth:RedirectUri");
+}
+
 // Configure Resend
 var resendApiKey = builder.Configuration["Resend:ApiKey"] 
     ?? throw new InvalidOperationException("Resend API key is not configured. Set RESEND_API_KEY environment variable or Resend:ApiKey in configuration.");
@@ -135,11 +146,48 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Apply database migrations
+// Apply database migrations safely
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.Migrate();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        // Check if database can be connected to
+        await context.Database.CanConnectAsync();
+        logger.LogInformation("Database connection successful");
+        
+        // Get pending migrations
+        var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+        
+        if (pendingMigrations.Any())
+        {
+            logger.LogInformation("Applying {Count} pending migrations: {Migrations}", 
+                pendingMigrations.Count(), string.Join(", ", pendingMigrations));
+            
+            // Apply migrations
+            await context.Database.MigrateAsync();
+            
+            logger.LogInformation("Successfully applied all pending migrations");
+        }
+        else
+        {
+            logger.LogInformation("No pending migrations found. Database is up to date.");
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error during database migration process");
+        
+        // Only rethrow in production to fail fast, allow development to continue
+        if (app.Environment.IsProduction())
+        {
+            throw;
+        }
+        
+        logger.LogWarning("Continuing in development mode despite migration errors");
+    }
 }
 
 app.Run();

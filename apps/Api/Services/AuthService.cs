@@ -64,7 +64,8 @@ public class AuthService : IAuthService
                 Email = registerDto.Email,
                 FirstName = registerDto.FirstName,
                 LastName = registerDto.LastName,
-                EmailConfirmed = true // For demo purposes, in production you'd want email confirmation
+                EmailConfirmed = true, // For demo purposes, in production you'd want email confirmation
+                IsGoogleUser = false // Regular registration
             };
 
             var result = await _userManager.CreateAsync(user, registerDto.Password);
@@ -124,6 +125,16 @@ public class AuthService : IAuthService
                 };
             }
 
+            // Check if this is a Google-only user trying to log in with password
+            if (user.IsGoogleUser && string.IsNullOrEmpty(user.PasswordHash))
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "This account uses Google sign-in. Please use 'Continue with Google' to log in."
+                };
+            }
+
             var isValidPassword = await _userManager.CheckPasswordAsync(user, loginDto.Password);
             if (!isValidPassword)
             {
@@ -174,16 +185,25 @@ public class AuthService : IAuthService
         var expirationHours = int.Parse(jwtSettings["ExpirationHours"] ?? "24");
 
         var tokenHandler = new JwtSecurityTokenHandler();
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim(ClaimTypes.Email, user.Email!),
+            new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
+            new Claim("FirstName", user.FirstName),
+            new Claim("LastName", user.LastName),
+            new Claim("IsGoogleUser", user.IsGoogleUser.ToString())
+        };
+
+        // Add profile picture URL if available
+        if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+        {
+            claims.Add(new Claim("ProfilePictureUrl", user.ProfilePictureUrl));
+        }
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim(ClaimTypes.Email, user.Email!),
-                new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
-                new Claim("FirstName", user.FirstName),
-                new Claim("LastName", user.LastName)
-            }),
+            Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddHours(expirationHours),
             Issuer = issuer,
             Audience = audience,
@@ -277,6 +297,17 @@ public class AuthService : IAuthService
             
             if (user != null)
             {
+                // Check if this is a Google-only user
+                if (user.IsGoogleUser && string.IsNullOrEmpty(user.PasswordHash))
+                {
+                    // Don't send password reset for Google-only users, but still return success
+                    return new AuthResponseDto
+                    {
+                        Success = true,
+                        Message = "If an account with that email exists, a password reset link has been sent."
+                    };
+                }
+
                 // Clean up any existing unused tokens for this user
                 var existingTokens = await _context.PasswordResetTokens
                     .Where(t => t.UserId == user.Id && !t.IsUsed)
@@ -355,6 +386,16 @@ public class AuthService : IAuthService
                 {
                     Success = false,
                     Message = "User not found."
+                };
+            }
+
+            // Check if this is a Google-only user
+            if (user.IsGoogleUser && string.IsNullOrEmpty(user.PasswordHash))
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "This account uses Google sign-in and cannot have a password reset."
                 };
             }
 

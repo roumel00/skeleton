@@ -63,12 +63,6 @@ public class AuthController : ControllerBase
     public async Task<ActionResult> GetCurrentUser()
     {
         var result = await _authService.GetCurrentUserAsync();
-
-        if (!result.Success)
-        {
-            return Unauthorized(result);
-        }
-
         // Return the user if authenticated, or null if not authenticated
         // Both cases return 200 OK - this is the key change
         return Ok(new { user = result.User });
