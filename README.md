@@ -1,151 +1,376 @@
-# Full-Stack Skeleton Project
+# Full-Stack Skeleton Project Template
 
-A copy-paste starting point for building full-stack applications with .NET 9 API backend and Next.js frontend.
+🚀 **A production-ready template for building full-stack applications with .NET 9 API backend and Next.js frontend, featuring built-in authentication and Google OAuth.**
 
-## What's Included
+Perfect for developers who want to skip the boilerplate and start building features immediately.
 
-- **Backend**: .NET 9 Web API with JWT authentication, Entity Framework Core, and PostgreSQL
-- **Frontend**: Next.js 14+ with App Router, authentication, and modern UI components
-- **Database**: PostgreSQL with Docker
-- **Authentication**: JWT-based auth with user registration/login
-- **Docker**: Complete containerization setup
+## 🎯 What's Included
 
-## Quick Start
+### Backend (.NET 9 Web API)
+- ✅ **JWT Authentication** with HTTP-only cookies
+- ✅ **User Management** (registration, login, password reset)
+- ✅ **Google OAuth Integration** for social login
+- ✅ **Entity Framework Core** with PostgreSQL
+- ✅ **Email Service** with Resend for password reset
+- ✅ **CORS Configuration** for cross-origin requests
+- ✅ **Docker Support** with health checks
 
-### 1. Clone and Setup
+### Frontend (Next.js 15 with App Router)
+- ✅ **Modern React Components** with shadcn/ui
+- ✅ **Authentication Context** with session management
+- ✅ **Protected Routes** and auth guards
+- ✅ **Responsive Design** with Tailwind CSS
+- ✅ **Form Validation** with react-hook-form + Zod
+- ✅ **Google OAuth Button** component
+
+### Infrastructure
+- ✅ **PostgreSQL Database** with Docker
+- ✅ **Complete Docker Setup** for development
+- ✅ **Production Deployment** guides for Fly.io + Vercel
+- ✅ **Environment Configuration** for dev/staging/prod
+
+## 🚀 Quick Start
+
+### 1. Clone the Repository
 ```bash
-git clone <your-repo>
-cd skeleton-project
+git clone https://github.com/your-username/your-repo-name.git
+cd your-repo-name
 ```
 
-### 2. Environment Variables
-Create a `.env` file in the root:
-```bash
-# Database Configuration
-DB_USER=jake
-DB_PASSWORD=your_password_here
-DB_NAME=skeleton
+### 2. Environment Setup
 
-# JWT Configuration
-JWT_SECRET=$(openssl rand -base64 64)
+Create a `.env` file in the project root with the following variables:
+
+```bash
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+DB_USER=skeleton_user
+DB_PASSWORD=your_secure_password_here
+DB_NAME=skeleton_db
+
+# Connection string for the API (auto-constructed from above)
+CONNECTION_STRING=Host=db;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+
+# =============================================================================
+# JWT AUTHENTICATION
+# =============================================================================
+# Generate a secure secret: openssl rand -base64 64
+JWT_SECRET=your_jwt_secret_key_here_make_it_very_long_and_secure
 JWT_ISSUER=SkeletonApi
 JWT_AUDIENCE=SkeletonFrontend
 
-# CORS Configuration
+# =============================================================================
+# APPLICATION URLS
+# =============================================================================
+API_BASE_URL=http://localhost:3030
+FRONTEND_BASE_URL=http://localhost:3000
+FRONTEND_DOMAIN=localhost
 CORS_ORIGIN=http://localhost:3000
 
-# API Configuration
-API_BASE_URL=http://localhost:3030
+# =============================================================================
+# EMAIL SERVICE (Resend)
+# =============================================================================
+# Get your API key from: https://resend.com/api-keys
+RESEND_API_KEY=re_your_resend_api_key_here
+APP_FROM_EMAIL=noreply@yourdomain.com
 
-# Email Service (for password reset)
-RESEND_API_KEY=your_resend_api_key_here
+# =============================================================================
+# GOOGLE OAUTH (Optional - for social login)
+# =============================================================================
+# Get credentials from: https://console.cloud.google.com/
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3030/api/oauth/google/callback
 ```
 
-### 3. Run with Docker
+### 3. Start the Application
 ```bash
+# Start all services (database, API, frontend)
+docker compose up --build
+
+# Or for development with auto-restart:
 docker compose down && docker compose up --build
 ```
 
-### 4. Access Your Apps
+### 4. Access Your Application
 - **Frontend**: http://localhost:3000
 - **API**: http://localhost:3030
+- **Database**: localhost:5432
 
-## Project Structure
+## 📁 Project Structure
 ```
 skeleton-project/
 ├── apps/
-│   ├── Api/          # .NET 9 Web API
-│   └── web/          # Next.js Frontend
-├── docker-compose.yml
-└── README.md
+│   ├── Api/                    # .NET 9 Web API Backend
+│   │   ├── Controllers/        # API endpoints (Auth, OAuth, Test)
+│   │   ├── Data/              # Database context and migrations
+│   │   ├── Entities/          # Database models (User, PasswordResetToken)
+│   │   ├── Models/            # DTOs and request/response models
+│   │   ├── Services/          # Business logic (Auth, Email, OAuth)
+│   │   └── Program.cs         # Application configuration
+│   └── web/                   # Next.js 15 Frontend
+│       ├── app/               # App Router pages
+│       ├── components/        # Reusable UI components
+│       ├── contexts/          # React contexts (SessionProvider)
+│       └── hooks/             # Custom React hooks
+├── docker-compose.yml         # Multi-container setup
+└── .env                      # Environment variables
 ```
 
-## What You Get
+## 🔧 Required Service Setup
 
-- ✅ User registration and login
-- ✅ JWT authentication
-- ✅ Password reset functionality with email
-- ✅ Protected API endpoints
-- ✅ Modern React components
-- ✅ Responsive UI with Tailwind CSS
-- ✅ Docker containerization
-- ✅ PostgreSQL database
-- ✅ Ready-to-extend architecture
+### Google OAuth Setup (Optional)
 
-## Deployment
+To enable Google social login, you'll need to set up OAuth credentials:
 
-### Backend & Database on Fly.io
+1. **Go to Google Cloud Console**
+   - Visit [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
 
-The backend API and PostgreSQL database are deployed to Fly.io. The API is configured to run on port 3030 and includes:
+2. **Enable Google+ API**
+   - Navigate to "APIs & Services" > "Library"
+   - Search for "Google+ API" and enable it
 
-- JWT authentication with HTTP-only cookies
-- CORS configuration for cross-origin requests
-- PostgreSQL database with Entity Framework Core
-- Automatic database creation on startup
+3. **Create OAuth Credentials**
+   - Go to "APIs & Services" > "Credentials"
+   - Click "Create Credentials" > "OAuth 2.0 Client IDs"
+   - Choose "Web application"
+   - Add authorized redirect URIs:
+     - Development: `http://localhost:3030/api/oauth/google/callback`
+     - Production: `https://your-api-domain.com/api/oauth/google/callback`
 
-### Frontend on Vercel
+4. **Update Environment Variables**
+   ```bash
+   GOOGLE_CLIENT_ID=your_client_id_here.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your_client_secret_here
+   GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3030/api/oauth/google/callback
+   ```
 
-The Next.js frontend is deployed to Vercel and configured to communicate with the Fly.io API.
+### Email Service Setup (Resend)
 
-### Required Environment Variables
+For password reset functionality:
 
-To deploy your own version, you must set the following environment variables in Fly.io:
+1. **Sign up for Resend**
+   - Create account at [resend.com](https://resend.com)
+   - Verify your domain or use their test domain
+
+2. **Get API Key**
+   - Go to [API Keys](https://resend.com/api-keys)
+   - Create a new API key
+
+3. **Update Environment Variables**
+   ```bash
+   RESEND_API_KEY=re_your_api_key_here
+   APP_FROM_EMAIL=noreply@yourdomain.com
+   ```
+
+## ✨ Features Overview
+
+### 🔐 Authentication System
+- **JWT Authentication** with secure HTTP-only cookies
+- **User Registration/Login** with email verification
+- **Password Reset** via email with secure tokens
+- **Google OAuth** social login integration
+- **Session Management** with automatic token refresh
+
+### 🎨 Frontend Features  
+- **Modern UI** with shadcn/ui components
+- **Responsive Design** that works on all devices
+- **Protected Routes** with authentication guards
+- **Form Validation** using react-hook-form + Zod
+- **Toast Notifications** for user feedback
+- **Loading States** and error handling
+
+### ⚡ Backend Features
+- **RESTful API** with clear endpoint structure
+- **Database Migrations** with Entity Framework Core
+- **Input Validation** and error handling
+- **CORS Configuration** for cross-origin requests
+- **Health Checks** for monitoring
+- **Structured Logging** for debugging
+
+## 🚀 Deployment
+
+This template is designed for easy deployment with recommended hosting platforms that provide excellent developer experience and scalability.
+
+### Development Environment
+
+For local development with hot reload:
 
 ```bash
-# Set database connection string
+# Start all services (recommended)
+docker compose up --build
+
+# Or run services individually:
+# Backend (.NET API)
+cd apps/Api && dotnet run
+
+# Frontend (Next.js)
+cd apps/web && npm run dev
+
+# Database (PostgreSQL)
+docker run --name postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres:16
+```
+
+### Production Deployment
+
+#### Backend API + Database (Fly.io)
+
+Deploy your .NET API and PostgreSQL database to Fly.io:
+
+**1. Install Fly CLI and Login**
+```bash
+# Install Fly CLI
+curl -L https://fly.io/install.sh | sh
+
+# Login to your account
+fly auth login
+```
+
+**2. Initialize Fly App**
+```bash
+cd apps/Api
+fly launch --no-deploy  # Follow prompts to create app
+```
+
+**3. Set Production Environment Variables**
+```bash
+# Database (Fly.io will create managed PostgreSQL)
+fly postgres create --name your-app-db
+
+# Get connection string and set it
 fly secrets set ConnectionStrings__DefaultConnection="your_postgres_connection_string"
 
-# Set JWT configuration
-fly secrets set JwtSettings__SecretKey="your_jwt_secret_key"
-fly secrets set JwtSettings__Issuer="your-app-name"
-fly secrets set JwtSettings__Audience="your-app-users"
+# JWT Configuration
+fly secrets set JwtSettings__SecretKey="$(openssl rand -base64 64)"
+fly secrets set JwtSettings__Issuer="YourAppName"
+fly secrets set JwtSettings__Audience="YourAppUsers"
 
-# Set CORS allowed origins (your Vercel app URL)
+# Email Service
+fly secrets set Resend__ApiKey="your_resend_api_key"
+fly secrets set App__FromEmail="noreply@yourdomain.com"
+
+# Frontend URLs (will update after Vercel deployment)
+fly secrets set Frontend__BaseUrl="https://your-vercel-app.vercel.app"
+fly secrets set Frontend__Domain="your-vercel-app.vercel.app"
 fly secrets set CORS__AllowedOrigins="https://your-vercel-app.vercel.app"
 
-# Set Resend API key and verified email for password reset emails
-fly secrets set Resend__ApiKey="your_resend_api_key"
-fly secrets set App__FromEmail=noreply@notifications.jobsign.au
-
-# Set frontend urls
-fly secrets set Frontend__BaseUrl=https://skeleton-orcin.vercel.app/
-fly secrets set Frontend__Domain=skeleton-orcin.vercel.app
+# Google OAuth (optional)
+fly secrets set GoogleOAuth__ClientId="your_google_client_id"
+fly secrets set GoogleOAuth__ClientSecret="your_google_client_secret"
+fly secrets set GoogleOAuth__RedirectUri="https://your-fly-app.fly.dev/api/oauth/google/callback"
 ```
 
-### Frontend Environment Variables
-
-For your Vercel deployment, set this environment variable:
-
+**4. Deploy**
 ```bash
-NEXT_PUBLIC_API_BASE_URL=https://your-fly-app-name.fly.dev
+fly deploy
 ```
 
-## Email Service Setup
+#### Frontend (Vercel)
 
-This project uses [Resend](https://resend.com) for sending password reset emails. To enable the password reset functionality:
+Deploy your Next.js frontend to Vercel:
 
-1. **Sign up for Resend**: Create an account at [resend.com](https://resend.com)
-2. **Get your API key**: Copy your API key from the Resend dashboard
-3. **Set the environment variable**: Add `RESEND_API_KEY=your_api_key_here` to your `.env` file
-4. **For production**: Set the `Resend__ApiKey` secret in Fly.io as shown in the deployment section
+**1. Connect to Vercel**
+- Visit [vercel.com](https://vercel.com) and sign in
+- Import your GitHub repository
+- Set the root directory to `apps/web`
 
-Without the Resend API key, the password reset functionality will not work and will throw an error when users try to reset their passwords.
+**2. Set Environment Variables in Vercel**
+```bash
+# API URL (use your Fly.io app URL)
+NEXT_PUBLIC_API_BASE_URL=https://your-fly-app.fly.dev
+```
 
-## Next Steps
+**3. Deploy**
+- Push to your main branch to trigger automatic deployment
+- Or use Vercel CLI: `npx vercel --prod`
 
-1. Get a Resend API key and configure it for password reset emails
-2. Customize the authentication logic
-3. Add your business entities and endpoints
-4. Style your components
-5. Set up your own Fly.io and Vercel deployments with the required environment variables
+#### Alternative Deployment Options
 
-## Prod vs. Dev
+**Backend Alternatives:**
+- **Railway**: Similar to Fly.io with excellent developer experience
+- **Azure App Service**: Microsoft's platform with .NET optimization
+- **AWS ECS**: Container-based deployment with auto-scaling
+- **DigitalOcean App Platform**: Simple container deployment
 
-To push to production, link the apps/web to a vercel project and every git push will redeploy on vercel.
-To push the backend, navigate to apps/Api and run `fly deploy` (requres cli set up)
+**Frontend Alternatives:**
+- **Netlify**: Great for static sites with serverless functions
+- **Cloudflare Pages**: Fast global CDN with edge computing
+- **AWS Amplify**: Full-stack deployment with AWS integration
 
-To start developing, run docker compose down && docker compose up --build to deploy changes to a dev environment.
+### Environment Variables Reference
+
+#### Production Backend Variables (Fly.io/Railway/etc.)
+```bash
+ConnectionStrings__DefaultConnection=your_postgres_connection_string
+JwtSettings__SecretKey=your_jwt_secret_64_chars_minimum
+JwtSettings__Issuer=YourAppName
+JwtSettings__Audience=YourAppUsers
+CORS__AllowedOrigins=https://your-frontend-domain.com
+Resend__ApiKey=re_your_resend_api_key
+App__FromEmail=noreply@yourdomain.com
+Frontend__BaseUrl=https://your-frontend-domain.com
+Frontend__Domain=your-frontend-domain.com
+GoogleOAuth__ClientId=your_google_client_id.apps.googleusercontent.com
+GoogleOAuth__ClientSecret=your_google_client_secret
+GoogleOAuth__RedirectUri=https://your-api-domain.com/api/oauth/google/callback
+```
+
+#### Production Frontend Variables (Vercel/Netlify/etc.)
+```bash
+NEXT_PUBLIC_API_BASE_URL=https://your-api-domain.com
+```
+
+## 🛠️ Customization Guide
+
+### Adding New Features
+
+1. **Backend**: Add controllers in `apps/Api/Controllers/`
+2. **Database**: Create migrations with `dotnet ef migrations add YourMigration`
+3. **Frontend**: Add pages in `apps/web/app/` using App Router
+4. **Components**: Create reusable UI in `apps/web/components/`
+
+### Styling and Branding
+
+- **Colors**: Update `apps/web/app/globals.css` for color scheme
+- **Components**: Customize `apps/web/components/ui/` for your design system
+- **Layout**: Modify `apps/web/app/layout.js` for global layout changes
+
+### Database Schema
+
+Add new entities in `apps/Api/Entities/` and update `ApplicationDbContext.cs`:
+
+```csharp
+// Add to ApplicationDbContext.cs
+public DbSet<YourEntity> YourEntities { get; set; }
+
+// Create migration
+dotnet ef migrations add AddYourEntity
+
+// Apply to database
+dotnet ef database update
+```
+
+## 🎯 Next Steps
+
+1. **📧 Configure Email**: Set up Resend for password reset emails
+2. **🔐 Setup OAuth**: Configure Google OAuth for social login (optional)  
+3. **🎨 Customize Design**: Update colors, fonts, and components to match your brand
+4. **📊 Add Analytics**: Integrate Google Analytics, Mixpanel, or similar
+5. **🚀 Deploy**: Set up production deployment with Fly.io + Vercel
+6. **📈 Monitor**: Add error tracking with Sentry or similar service
+7. **🧪 Testing**: Add unit tests for your business logic
+8. **📚 Documentation**: Update this README with your specific implementation details
+
+## 🤝 Contributing
+
+This is a template project - fork it and make it your own! If you create improvements that could benefit others, consider:
+
+- Creating issues for bugs or feature requests
+- Submitting pull requests for general improvements
+- Sharing your customizations and extensions
 
 ---
 
-**Ready to build!** 🚀
+**🚀 Happy building! You now have everything you need to create amazing full-stack applications.**
