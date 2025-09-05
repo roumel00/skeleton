@@ -8,6 +8,7 @@ using Resend;
 using Api.Data;
 using Api.Entities;
 using Api.Services;
+using Api.Services.OAuth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,16 +87,16 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
+// Register the unified authentication services
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+
+// Register OAuth providers
+builder.Services.AddScoped<GoogleOAuthProvider>();
+
 var googleClientId = builder.Configuration["GoogleOAuth:ClientId"];
 var googleClientSecret = builder.Configuration["GoogleOAuth:ClientSecret"];
 var googleRedirectUri = builder.Configuration["GoogleOAuth:RedirectUri"];
-
-if (string.IsNullOrEmpty(googleClientId) || string.IsNullOrEmpty(googleClientSecret) || string.IsNullOrEmpty(googleRedirectUri))
-{
-    Console.WriteLine("Warning: Google OAuth configuration is missing. Google OAuth will not be available.");
-    Console.WriteLine("Please set GoogleOAuth:ClientId, GoogleOAuth:ClientSecret, and GoogleOAuth:RedirectUri");
-}
 
 // Configure Resend
 var resendApiKey = builder.Configuration["Resend:ApiKey"] 
@@ -110,7 +111,6 @@ builder.Services.Configure<ResendClientOptions>(options =>
 builder.Services.AddScoped<IResend, ResendClient>();
 
 // Register services
-builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddHttpContextAccessor();
 

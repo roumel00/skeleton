@@ -1,45 +1,33 @@
 using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 using Api.Entities;
 using Api.Models;
 using Api.Data;
+using Api.Services.OAuth;
 
 namespace Api.Services;
 
-public interface IAuthService
-{
-    Task<AuthResponseDto> RegisterAsync(RegisterDto registerDto);
-    Task<AuthResponseDto> LoginAsync(LoginDto loginDto);
-    Task<AuthResponseDto> GetCurrentUserAsync();
-    Task<AuthResponseDto> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto);
-    Task<AuthResponseDto> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
-}
-
-public class AuthService : IAuthService
+public class AuthenticationService : IAuthenticationService
 {
     private readonly UserManager<User> _userManager;
-    private readonly IConfiguration _configuration;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ITokenService _tokenService;
     private readonly ApplicationDbContext _context;
     private readonly IEmailService _emailService;
+    private readonly IServiceProvider _serviceProvider;
 
-    public AuthService(
-        UserManager<User> userManager, 
-        IConfiguration configuration, 
-        IHttpContextAccessor httpContextAccessor,
+    public AuthenticationService(
+        UserManager<User> userManager,
+        ITokenService tokenService,
         ApplicationDbContext context,
-        IEmailService emailService)
+        IEmailService emailService,
+        IServiceProvider serviceProvider)
     {
         _userManager = userManager;
-        _configuration = configuration;
-        _httpContextAccessor = httpContextAccessor;
+        _tokenService = tokenService;
         _context = context;
         _emailService = emailService;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto registerDto)
@@ -64,8 +52,8 @@ public class AuthService : IAuthService
                 Email = registerDto.Email,
                 FirstName = registerDto.FirstName,
                 LastName = registerDto.LastName,
-                EmailConfirmed = true, // For demo purposes, in production you'd want email confirmation
-                IsGoogleUser = false // Regular registration
+                EmailConfirmed = true, // For demo purposes
+                IsGoogleUser = false
             };
 
             var result = await _userManager.CreateAsync(user, registerDto.Password);
@@ -80,11 +68,9 @@ public class AuthService : IAuthService
                 };
             }
 
-            // Generate JWT token
-            var token = GenerateJwtToken(user);
-
-            // Set JWT token as HTTP-only cookie (same as login)
-            SetAuthCookie(token);
+            // Generate JWT token and set cookie
+            var token = _tokenService.GenerateJwtToken(user);
+            _tokenService.SetAuthCookie(token);
 
             return new AuthResponseDto
             {
@@ -145,11 +131,9 @@ public class AuthService : IAuthService
                 };
             }
 
-            // Generate JWT token
-            var token = GenerateJwtToken(user);
-
-            // Set JWT token as HTTP-only cookie
-            SetAuthCookie(token);
+            // Generate JWT token and set cookie
+            var token = _tokenService.GenerateJwtToken(user);
+            _tokenService.SetAuthCookie(token);
 
             return new AuthResponseDto
             {
@@ -176,49 +160,13 @@ public class AuthService : IAuthService
         }
     }
 
-    private string GenerateJwtToken(User user)
-    {
-        var jwtSettings = _configuration.GetSection("JwtSettings");
-        var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"] ?? "YourSuperSecretKeyHere123!@#");
-        var issuer = jwtSettings["Issuer"] ?? "YourApp";
-        var audience = jwtSettings["Audience"] ?? "YourAppUsers";
-        var expirationHours = int.Parse(jwtSettings["ExpirationHours"] ?? "24");
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Email, user.Email!),
-            new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
-            new Claim("FirstName", user.FirstName),
-            new Claim("LastName", user.LastName),
-            new Claim("IsGoogleUser", user.IsGoogleUser.ToString())
-        };
-
-        // Add profile picture URL if available
-        if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
-        {
-            claims.Add(new Claim("ProfilePictureUrl", user.ProfilePictureUrl));
-        }
-
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddHours(expirationHours),
-            Issuer = issuer,
-            Audience = audience,
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-        };
-
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
-    }
-
     public async Task<AuthResponseDto> GetCurrentUserAsync()
     {
         try
         {
-            var context = _httpContextAccessor.HttpContext;
+            var httpContextAccessor = _serviceProvider.GetRequiredService<IHttpContextAccessor>();
+            var context = httpContextAccessor.HttpContext;
+            
             if (context == null)
             {
                 return new AuthResponseDto
@@ -228,11 +176,8 @@ public class AuthService : IAuthService
                 };
             }
 
+            // Add debugging information
             var authCookie = context.Request.Cookies["AuthToken"];
-            Console.WriteLine($"Auth cookie present: {!string.IsNullOrEmpty(authCookie)}");
-            Console.WriteLine($"User authenticated: {context.User.Identity?.IsAuthenticated}");
-            Console.WriteLine($"Request scheme: {context.Request.Scheme}");
-            Console.WriteLine($"Request host: {context.Request.Host}");
 
             // Check if user has a valid JWT token
             if (!context.User.Identity?.IsAuthenticated ?? true)
@@ -246,7 +191,7 @@ public class AuthService : IAuthService
                 };
             }
 
-            var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier);
+            var userIdClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
             if (userIdClaim == null)
             {
                 // This shouldn't happen if IsAuthenticated is true, but handle it gracefully
@@ -284,7 +229,6 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"GetCurrentUserAsync error: {ex.Message}");
             return new AuthResponseDto
             {
                 Success = false,
@@ -300,8 +244,6 @@ public class AuthService : IAuthService
             var user = await _userManager.FindByEmailAsync(forgotPasswordDto.Email);
             
             // Always return success to prevent email enumeration attacks
-            // Don't reveal whether the email exists or not
-            
             if (user != null)
             {
                 // Check if this is a Google-only user
@@ -449,30 +391,138 @@ public class AuthService : IAuthService
         }
     }
 
-    private void SetAuthCookie(string token)
+    public string GetOAuthAuthorizationUrl(string provider)
     {
-        var context = _httpContextAccessor.HttpContext;
-        if (context == null) return;
+        var oauthProvider = GetOAuthProvider(provider);
+        return oauthProvider.GetAuthorizationUrl();
+    }
 
-        // Check if this is a cross-origin request
-        var isHttps = context.Request.IsHttps;
-        var origin = context.Request.Headers["Origin"].FirstOrDefault();
-        var isCrossOrigin = !string.IsNullOrEmpty(origin) && 
-                           !origin.Contains(context.Request.Host.Host);
-
-        // For cross-origin HTTPS requests, we need SameSite=None and Secure=true
-        var useSameSiteNone = isHttps && isCrossOrigin;
-
-        var cookieOptions = new CookieOptions
+    public async Task<AuthResponseDto> HandleOAuthCallbackAsync(string provider, string code)
+    {
+        try
         {
-            HttpOnly = true,
-            Secure = useSameSiteNone, // Must be true for SameSite=None
-            SameSite = useSameSiteNone ? SameSiteMode.None : SameSiteMode.Lax,
-            Expires = DateTime.UtcNow.AddHours(24),
-            Path = "/"
+            var oauthProvider = GetOAuthProvider(provider);
+            var userInfo = await oauthProvider.GetUserInfoAsync(code);
+
+            // Find or create user
+            var user = await FindOrCreateOAuthUserAsync(userInfo);
+            if (user == null)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Failed to create or find user"
+                };
+            }
+
+            // Generate JWT token and set cookie
+            var token = _tokenService.GenerateJwtToken(user);
+            _tokenService.SetAuthCookie(token);
+
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = $"{provider} OAuth login successful",
+                Token = token,
+                User = new UserInfoDto
+                {
+                    Id = user.Id,
+                    Email = user.Email!,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    CreatedAt = user.CreatedAt
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            return new AuthResponseDto
+            {
+                Success = false,
+                Message = $"OAuth error: {ex.Message}"
+            };
+        }
+    }
+
+    public void SignOut()
+    {
+        _tokenService.ClearAuthCookie();
+    }
+
+    private IOAuthProvider GetOAuthProvider(string provider)
+    {
+        return provider.ToLower() switch
+        {
+            "google" => _serviceProvider.GetRequiredService<GoogleOAuthProvider>(),
+            _ => throw new ArgumentException($"Unsupported OAuth provider: {provider}")
+        };
+    }
+
+    private async Task<User?> FindOrCreateOAuthUserAsync(OAuthUserInfo userInfo)
+    {
+        // First, try to find by provider-specific ID (for Google, this is GoogleId)
+        var existingUser = userInfo.Provider.ToLower() switch
+        {
+            "google" => await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == userInfo.Id),
+            _ => null
         };
 
-        context.Response.Cookies.Append("AuthToken", token, cookieOptions);
+        if (existingUser != null)
+        {
+            // Update user info in case it changed
+            existingUser.FirstName = userInfo.FirstName ?? existingUser.FirstName;
+            existingUser.LastName = userInfo.LastName ?? existingUser.LastName;
+            existingUser.ProfilePictureUrl = userInfo.ProfilePictureUrl;
+            existingUser.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            return existingUser;
+        }
+
+        // Check if user exists with this email (might be a regular user wanting to link OAuth)
+        var userByEmail = await _userManager.FindByEmailAsync(userInfo.Email);
+        if (userByEmail != null)
+        {
+            // Link OAuth account to existing user
+            switch (userInfo.Provider.ToLower())
+            {
+                case "google":
+                    userByEmail.GoogleId = userInfo.Id;
+                    break;
+            }
+            
+            userByEmail.IsGoogleUser = userInfo.Provider.ToLower() == "google";
+            userByEmail.ProfilePictureUrl = userInfo.ProfilePictureUrl;
+            userByEmail.UpdatedAt = DateTime.UtcNow;
+            
+            await _userManager.UpdateAsync(userByEmail);
+            return userByEmail;
+        }
+
+        // Create new user
+        var newUser = new User
+        {
+            UserName = userInfo.Email,
+            Email = userInfo.Email,
+            EmailConfirmed = true, // OAuth emails are pre-verified
+            FirstName = userInfo.FirstName,
+            LastName = userInfo.LastName,
+            ProfilePictureUrl = userInfo.ProfilePictureUrl,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        // Set provider-specific fields
+        switch (userInfo.Provider.ToLower())
+        {
+            case "google":
+                newUser.GoogleId = userInfo.Id;
+                newUser.IsGoogleUser = true;
+                break;
+        }
+
+        var result = await _userManager.CreateAsync(newUser);
+        return result.Succeeded ? newUser : null;
     }
 
     private string GenerateSecureToken()

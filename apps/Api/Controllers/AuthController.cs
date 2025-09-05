@@ -8,11 +8,11 @@ namespace Api.Controllers;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService _authService;
+    private readonly IAuthenticationService _authenticationService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthenticationService authenticationService)
     {
-        _authService = authService;
+        _authenticationService = authenticationService;
     }
 
     [HttpPost("register")]
@@ -27,7 +27,7 @@ public class AuthController : ControllerBase
             });
         }
 
-        var result = await _authService.RegisterAsync(registerDto);
+        var result = await _authenticationService.RegisterAsync(registerDto);
 
         if (!result.Success)
         {
@@ -49,7 +49,7 @@ public class AuthController : ControllerBase
             });
         }
 
-        var result = await _authService.LoginAsync(loginDto);
+        var result = await _authenticationService.LoginAsync(loginDto);
 
         if (!result.Success)
         {
@@ -62,7 +62,7 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult> GetCurrentUser()
     {
-        var result = await _authService.GetCurrentUserAsync();
+        var result = await _authenticationService.GetCurrentUserAsync();
         // Return the user if authenticated, or null if not authenticated
         // Both cases return 200 OK - this is the key change
         return Ok(new { user = result.User });
@@ -71,25 +71,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public ActionResult Logout()
     {
-        // Check if this is a cross-origin request
-        var isHttps = Request.IsHttps;
-        var origin = Request.Headers["Origin"].FirstOrDefault();
-        var isCrossOrigin = !string.IsNullOrEmpty(origin) && 
-                           !origin.Contains(Request.Host.Host);
-
-        // For cross-origin HTTPS requests, we need SameSite=None and Secure=true
-        var useSameSiteNone = isHttps && isCrossOrigin;
-
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = useSameSiteNone, // Must be true for SameSite=None
-            SameSite = useSameSiteNone ? SameSiteMode.None : SameSiteMode.Lax,
-            Expires = DateTime.UtcNow.AddDays(-1), // Set to past date to delete
-            Path = "/"
-        };
-
-        Response.Cookies.Append("AuthToken", "", cookieOptions);
+        _authenticationService.SignOut();
         
         return Ok(new AuthResponseDto
         {
@@ -110,7 +92,7 @@ public class AuthController : ControllerBase
             });
         }
 
-        var result = await _authService.ForgotPasswordAsync(forgotPasswordDto);
+        var result = await _authenticationService.ForgotPasswordAsync(forgotPasswordDto);
         return Ok(result);
     }
 
@@ -126,7 +108,7 @@ public class AuthController : ControllerBase
             });
         }
 
-        var result = await _authService.ResetPasswordAsync(resetPasswordDto);
+        var result = await _authenticationService.ResetPasswordAsync(resetPasswordDto);
 
         if (!result.Success)
         {

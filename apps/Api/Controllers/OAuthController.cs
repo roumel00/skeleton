@@ -7,17 +7,19 @@ namespace Api.Controllers;
 [ApiController]
 public class OAuthController : ControllerBase
 {
-    private readonly IGoogleOAuthService _googleOAuthService;
+    private readonly IAuthenticationService _authenticationService;
+    private readonly IConfiguration _configuration;
 
-    public OAuthController(IGoogleOAuthService googleOAuthService)
+    public OAuthController(IAuthenticationService authenticationService, IConfiguration configuration)
     {
-        _googleOAuthService = googleOAuthService;
+        _authenticationService = authenticationService;
+        _configuration = configuration;
     }
 
     [HttpGet("google/start")]
     public ActionResult GoogleStart()
     {
-        var authUrl = _googleOAuthService.GetAuthorizationUrl();
+        var authUrl = _authenticationService.GetOAuthAuthorizationUrl("google");
         return Redirect(authUrl);
     }
 
@@ -26,57 +28,26 @@ public class OAuthController : ControllerBase
     {
         if (!string.IsNullOrEmpty(error))
         {
-            var frontendUrl = HttpContext.RequestServices
-                .GetRequiredService<IConfiguration>()["Frontend:BaseUrl"] ?? "http://localhost:3000";
+            var frontendUrl = _configuration["Frontend:BaseUrl"] ?? "http://localhost:3000";
             return Redirect($"{frontendUrl}/login?error=oauth_error");
         }
 
         if (string.IsNullOrEmpty(code))
         {
-            var frontendUrl = HttpContext.RequestServices
-                .GetRequiredService<IConfiguration>()["Frontend:BaseUrl"] ?? "http://localhost:3000";
+            var frontendUrl = _configuration["Frontend:BaseUrl"] ?? "http://localhost:3000";
             return Redirect($"{frontendUrl}/login?error=no_code");
         }
 
-        var result = await _googleOAuthService.HandleCallbackAsync(code);
+        var result = await _authenticationService.HandleOAuthCallbackAsync("google", code);
 
-        var frontendBaseUrl = HttpContext.RequestServices
-            .GetRequiredService<IConfiguration>()["Frontend:BaseUrl"] ?? "http://localhost:3000";
+        var frontendBaseUrl = _configuration["Frontend:BaseUrl"] ?? "http://localhost:3000";
 
         if (!result.Success)
         {
             return Redirect($"{frontendBaseUrl}/login?error=oauth_failed");
         }
 
-        // Set JWT cookie (same logic as regular login)
-        SetAuthCookie(result.Token!);
-
+        // Cookie is already set by the AuthenticationService
         return Redirect($"{frontendBaseUrl}/dashboard");
-    }
-
-    private void SetAuthCookie(string token)
-    {
-        var context = HttpContext;
-        if (context == null) return;
-
-        // Check if this is a cross-origin request
-        var isHttps = context.Request.IsHttps;
-        var origin = context.Request.Headers["Origin"].FirstOrDefault();
-        var isCrossOrigin = !string.IsNullOrEmpty(origin) && 
-                           !origin.Contains(context.Request.Host.Host);
-
-        // For cross-origin HTTPS requests, we need SameSite=None and Secure=true
-        var useSameSiteNone = isHttps && isCrossOrigin;
-
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = useSameSiteNone, // Must be true for SameSite=None
-            SameSite = useSameSiteNone ? SameSiteMode.None : SameSiteMode.Lax,
-            Expires = DateTime.UtcNow.AddHours(24),
-            Path = "/"
-        };
-
-        context.Response.Cookies.Append("AuthToken", token, cookieOptions);
     }
 }
