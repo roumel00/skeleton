@@ -221,7 +221,6 @@ public class AuthService : IAuthService
             var context = _httpContextAccessor.HttpContext;
             if (context == null)
             {
-                Console.WriteLine("DEBUG: No HTTP context available");
                 return new AuthResponseDto
                 {
                     Success = false,
@@ -229,22 +228,16 @@ public class AuthService : IAuthService
                 };
             }
 
-            // Debug: Check for AuthToken cookie
             var authCookie = context.Request.Cookies["AuthToken"];
-            Console.WriteLine($"DEBUG: AuthToken cookie present: {authCookie != null}");
-            if (authCookie != null)
-            {
-                Console.WriteLine($"DEBUG: AuthToken cookie value: {authCookie[..Math.Min(20, authCookie.Length)]}...");
-            }
+            Console.WriteLine($"Auth cookie present: {!string.IsNullOrEmpty(authCookie)}");
+            Console.WriteLine($"User authenticated: {context.User.Identity?.IsAuthenticated}");
+            Console.WriteLine($"Request scheme: {context.Request.Scheme}");
+            Console.WriteLine($"Request host: {context.Request.Host}");
 
             // Check if user has a valid JWT token
-            var isAuthenticated = context.User.Identity?.IsAuthenticated ?? false;
-            Console.WriteLine($"DEBUG: User.Identity.IsAuthenticated: {isAuthenticated}");
-            
-            if (!isAuthenticated)
+            if (!context.User.Identity?.IsAuthenticated ?? true)
             {
                 // No valid authentication - this is normal for unauthenticated users
-                Console.WriteLine("DEBUG: User not authenticated, returning null user");
                 return new AuthResponseDto
                 {
                     Success = true,
@@ -291,6 +284,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"GetCurrentUserAsync error: {ex.Message}");
             return new AuthResponseDto
             {
                 Success = false,
