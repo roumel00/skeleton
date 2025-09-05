@@ -24,19 +24,24 @@ export default function SessionProvider({ children }) {
           const data = await res.json();
           const u = data?.user ?? null;
           setUser(u);
-          setStatus(u ? 'authenticated' : 'unauthenticated');
+          const newStatus = u ? 'authenticated' : 'unauthenticated';
+          setStatus(newStatus);
+          console.log('DEBUG: status: ', newStatus);
+          console.log('DEBUG: user: ', u);
         } else {
           setUser(null);
           setStatus('unauthenticated');
+          console.log('DEBUG: status: unauthenticated (response not ok)');
+          console.log('DEBUG: user: null');
         }
-      } catch {
+      } catch (error) {
         if (!cancelled) {
           setUser(null);
           setStatus('unauthenticated');
+          console.log('DEBUG: status: unauthenticated (error)', error);
+          console.log('DEBUG: user: null');
         }
       }
-      console.log('DEBUG: status: ', status);
-      console.log('DEBUG: user: ', user);
     })();
     return () => { cancelled = true; };
   }, []);

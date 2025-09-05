@@ -221,6 +221,7 @@ public class AuthService : IAuthService
             var context = _httpContextAccessor.HttpContext;
             if (context == null)
             {
+                Console.WriteLine("DEBUG: No HTTP context available");
                 return new AuthResponseDto
                 {
                     Success = false,
@@ -228,10 +229,22 @@ public class AuthService : IAuthService
                 };
             }
 
+            // Debug: Check for AuthToken cookie
+            var authCookie = context.Request.Cookies["AuthToken"];
+            Console.WriteLine($"DEBUG: AuthToken cookie present: {authCookie != null}");
+            if (authCookie != null)
+            {
+                Console.WriteLine($"DEBUG: AuthToken cookie value: {authCookie[..Math.Min(20, authCookie.Length)]}...");
+            }
+
             // Check if user has a valid JWT token
-            if (!context.User.Identity?.IsAuthenticated ?? true)
+            var isAuthenticated = context.User.Identity?.IsAuthenticated ?? false;
+            Console.WriteLine($"DEBUG: User.Identity.IsAuthenticated: {isAuthenticated}");
+            
+            if (!isAuthenticated)
             {
                 // No valid authentication - this is normal for unauthenticated users
+                Console.WriteLine("DEBUG: User not authenticated, returning null user");
                 return new AuthResponseDto
                 {
                     Success = true,
