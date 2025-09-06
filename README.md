@@ -35,6 +35,10 @@ cd skeleton-project
 # Setup environment
 cp .env.example .env
 # Run the fly secrets set for all the variables
+
+# Update the database schema
+ConnectionStrings__DefaultConnection='Host=db;Port=5432;Database=your-db-name;Username=your-db-user;Password=your-db-password' \
+dotnet ef migrations add ReplaceIsGoogleUserWithOAuthProvider --context ApplicationDbContext
 ```
 
 ### 2. Start Services
@@ -45,6 +49,17 @@ docker compose up --build
 # Access your apps
 # Frontend: localhost:3000
 # API: localhost:3030
+```
+
+### 3. Development Mode (Optional)
+For frontend development with hot reloading:
+```bash
+# Start only API and database
+docker compose up db api
+
+# In another terminal, run the frontend in dev mode
+cd apps/web
+npm run dev
 ```
 
 ## 📁 Project Structure
