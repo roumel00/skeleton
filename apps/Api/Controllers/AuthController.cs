@@ -64,7 +64,6 @@ public class AuthController : ControllerBase
     {
         var result = await _authenticationService.GetCurrentUserAsync();
         // Return the user if authenticated, or null if not authenticated
-        // Both cases return 200 OK - this is the key change
         return Ok(new { user = result.User });
     }
 

@@ -115,7 +115,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddHttpContextAccessor();
 
 // Add CORS
-var allowedOrigins = builder.Configuration.GetSection("CORS:AllowedOrigins").Get<string>()?.Split(',') 
+var allowedOrigins = builder.Configuration.GetSection("Frontend:BaseUrl").Get<string>()?.Split(',') 
     ?? new[] { "http://localhost:3000" };
 
 builder.Services.AddCors(options =>

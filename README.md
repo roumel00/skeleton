@@ -254,7 +254,6 @@ fly secrets set App__FromEmail="noreply@yourdomain.com"
 # Frontend URLs (will update after Vercel deployment)
 fly secrets set Frontend__BaseUrl="https://your-vercel-app.vercel.app"
 fly secrets set Frontend__Domain="your-vercel-app.vercel.app"
-fly secrets set CORS__AllowedOrigins="https://your-vercel-app.vercel.app"
 
 # Google OAuth (optional)
 fly secrets set GoogleOAuth__ClientId="your_google_client_id"
@@ -307,7 +306,6 @@ ConnectionStrings__DefaultConnection=your_postgres_connection_string
 JwtSettings__SecretKey=your_jwt_secret_64_chars_minimum
 JwtSettings__Issuer=YourAppName
 JwtSettings__Audience=YourAppUsers
-CORS__AllowedOrigins=https://your-frontend-domain.com
 Resend__ApiKey=re_your_resend_api_key
 App__FromEmail=noreply@yourdomain.com
 Frontend__BaseUrl=https://your-frontend-domain.com

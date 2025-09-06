@@ -29,12 +29,11 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:3030
       - ASPNETCORE_ENVIRONMENT=Development
-      # .NET config keys use double underscores to map nested JSON
       - ConnectionStrings__DefaultConnection=${CONNECTION_STRING}
       - JwtSettings__Issuer=${JWT_ISSUER}
       - JwtSettings__Audience=${JWT_AUDIENCE}
       - JwtSettings__SecretKey=${JWT_SECRET}
-      - CORS__AllowedOrigins=${CORS_ORIGIN}
+      - JwtSettings__ExpirationHours=${JWT_EXPIRATION_HOURS}
       - Resend__ApiKey=${RESEND_API_KEY}
       - App__FromEmail=${APP_FROM_EMAIL}
       - Frontend__BaseUrl=${FRONTEND_BASE_URL}

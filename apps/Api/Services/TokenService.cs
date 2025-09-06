@@ -75,8 +75,7 @@ public class TokenService : ITokenService
             Secure = useSecureCookies,
             SameSite = useSecureCookies ? SameSiteMode.None : SameSiteMode.Lax,
             Expires = DateTime.UtcNow.AddHours(24),
-            Path = "/",
-            Domain = GetCookieDomain()
+            Path = "/"
         };
 
         context.Response.Cookies.Append("AuthToken", token, cookieOptions);
@@ -102,17 +101,9 @@ public class TokenService : ITokenService
             Secure = useSecureCookies,
             SameSite = useSecureCookies ? SameSiteMode.None : SameSiteMode.Lax,
             Expires = DateTime.UtcNow.AddDays(-1), // Set to past date to delete
-            Path = "/",
-            Domain = GetCookieDomain()
+            Path = "/"
         };
 
         context.Response.Cookies.Append("AuthToken", "", cookieOptions);
-    }
-
-    private string? GetCookieDomain()
-    {
-        // In production, you might want to set a specific domain
-        var cookieDomain = _configuration["Frontend:CookieDomain"];
-        return string.IsNullOrEmpty(cookieDomain) ? null : cookieDomain;
     }
 }

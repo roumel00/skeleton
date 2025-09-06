@@ -117,7 +117,7 @@ public class AuthenticationService : IAuthenticationService
                 return new AuthResponseDto
                 {
                     Success = false,
-                    Message = "This account uses Google sign-in. Please use 'Continue with Google' to log in."
+                    Message = "This account requires a different sign-in method."
                 };
             }
 
