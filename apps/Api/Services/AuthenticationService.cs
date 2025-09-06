@@ -53,7 +53,7 @@ public class AuthenticationService : IAuthenticationService
                 FirstName = registerDto.FirstName,
                 LastName = registerDto.LastName,
                 EmailConfirmed = true, // For demo purposes
-                IsGoogleUser = false
+                OAuthProvider = null // Traditional email/password user
             };
 
             var result = await _userManager.CreateAsync(user, registerDto.Password);
@@ -83,7 +83,8 @@ public class AuthenticationService : IAuthenticationService
                     Email = user.Email!,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    CreatedAt = user.CreatedAt
+                    CreatedAt = user.CreatedAt,
+                    OAuthProvider = user.OAuthProvider
                 }
             };
         }
@@ -111,8 +112,8 @@ public class AuthenticationService : IAuthenticationService
                 };
             }
 
-            // Check if this is a Google-only user trying to log in with password
-            if (user.IsGoogleUser && string.IsNullOrEmpty(user.PasswordHash))
+            // Check if this is an OAuth-only user trying to log in with password
+            if (!string.IsNullOrEmpty(user.OAuthProvider) && string.IsNullOrEmpty(user.PasswordHash))
             {
                 return new AuthResponseDto
                 {
@@ -146,7 +147,8 @@ public class AuthenticationService : IAuthenticationService
                     Email = user.Email!,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    CreatedAt = user.CreatedAt
+                    CreatedAt = user.CreatedAt,
+                    OAuthProvider = user.OAuthProvider
                 }
             };
         }
@@ -175,9 +177,6 @@ public class AuthenticationService : IAuthenticationService
                     Message = "No HTTP context available"
                 };
             }
-
-            // Add debugging information
-            var authCookie = context.Request.Cookies["AuthToken"];
 
             // Check if user has a valid JWT token
             if (!context.User.Identity?.IsAuthenticated ?? true)
@@ -223,7 +222,8 @@ public class AuthenticationService : IAuthenticationService
                     Email = user.Email!,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    CreatedAt = user.CreatedAt
+                    CreatedAt = user.CreatedAt,
+                    OAuthProvider = user.OAuthProvider
                 }
             };
         }
@@ -246,10 +246,10 @@ public class AuthenticationService : IAuthenticationService
             // Always return success to prevent email enumeration attacks
             if (user != null)
             {
-                // Check if this is a Google-only user
-                if (user.IsGoogleUser && string.IsNullOrEmpty(user.PasswordHash))
+                // Check if this is an OAuth-only user
+                if (!string.IsNullOrEmpty(user.OAuthProvider) && string.IsNullOrEmpty(user.PasswordHash))
                 {
-                    // Don't send password reset for Google-only users, but still return success
+                    // Don't send password reset for OAuth-only users, but still return success
                     return new AuthResponseDto
                     {
                         Success = true,
@@ -338,13 +338,13 @@ public class AuthenticationService : IAuthenticationService
                 };
             }
 
-            // Check if this is a Google-only user
-            if (user.IsGoogleUser && string.IsNullOrEmpty(user.PasswordHash))
+            // Check if this is an OAuth-only user
+            if (!string.IsNullOrEmpty(user.OAuthProvider) && string.IsNullOrEmpty(user.PasswordHash))
             {
                 return new AuthResponseDto
                 {
                     Success = false,
-                    Message = "This account uses Google sign-in and cannot have a password reset."
+                    Message = $"This account uses {user.OAuthProvider} sign-in and cannot have a password reset."
                 };
             }
 
@@ -430,7 +430,8 @@ public class AuthenticationService : IAuthenticationService
                     Email = user.Email!,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
-                    CreatedAt = user.CreatedAt
+                    CreatedAt = user.CreatedAt,
+                    OAuthProvider = user.OAuthProvider
                 }
             };
         }
@@ -491,7 +492,7 @@ public class AuthenticationService : IAuthenticationService
                     break;
             }
             
-            userByEmail.IsGoogleUser = userInfo.Provider.ToLower() == "google";
+            userByEmail.OAuthProvider = userInfo.Provider.ToLower();
             userByEmail.ProfilePictureUrl = userInfo.ProfilePictureUrl;
             userByEmail.UpdatedAt = DateTime.UtcNow;
             
@@ -509,7 +510,8 @@ public class AuthenticationService : IAuthenticationService
             LastName = userInfo.LastName,
             ProfilePictureUrl = userInfo.ProfilePictureUrl,
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
+            OAuthProvider = userInfo.Provider.ToLower()
         };
 
         // Set provider-specific fields
@@ -517,7 +519,6 @@ public class AuthenticationService : IAuthenticationService
         {
             case "google":
                 newUser.GoogleId = userInfo.Id;
-                newUser.IsGoogleUser = true;
                 break;
         }
 

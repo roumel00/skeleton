@@ -31,9 +31,14 @@ public class TokenService : ITokenService
             new Claim(ClaimTypes.Email, user.Email!),
             new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
             new Claim("FirstName", user.FirstName),
-            new Claim("LastName", user.LastName),
-            new Claim("IsGoogleUser", user.IsGoogleUser.ToString())
+            new Claim("LastName", user.LastName)
         };
+
+        // Add OAuth provider claim if available
+        if (!string.IsNullOrEmpty(user.OAuthProvider))
+        {
+            claims.Add(new Claim("OAuthProvider", user.OAuthProvider));
+        }
 
         // Add profile picture URL if available
         if (!string.IsNullOrEmpty(user.ProfilePictureUrl))

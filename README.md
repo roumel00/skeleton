@@ -1,122 +1,77 @@
-# Full-Stack Skeleton Project Template
+# Full-Stack Skeleton Project
 
-🚀 **A production-ready template for building full-stack applications with .NET 9 API backend and Next.js frontend, featuring built-in authentication and Google OAuth.**
+🚀 **Production-Ready Template**
 
-Perfect for developers who want to skip the boilerplate and start building features immediately.
+A complete template with .NET 9 API backend and Next.js frontend, featuring built-in authentication and Google OAuth. **Skip the boilerplate and start building features immediately.**
 
-## 🎯 What's Included
+## 🔐 Authentication System
+- **JWT Authentication** with HTTP-only cookies
+- **User registration & login**
+- **Password reset via email**
+- **Google OAuth integration**
+- **Session management**
 
-### Backend (.NET 9 Web API)
-- ✅ **JWT Authentication** with HTTP-only cookies
-- ✅ **User Management** (registration, login, password reset)
-- ✅ **Google OAuth Integration** for social login
-- ✅ **Entity Framework Core** with PostgreSQL
-- ✅ **Email Service** with Resend for password reset
-- ✅ **CORS Configuration** for cross-origin requests
-- ✅ **Docker Support** with health checks
+## 🎨 Modern Frontend
+- **Next.js 15 with App Router**
+- **shadcn/ui components**
+- **Responsive design**
+- **Protected routes**
 
-### Frontend (Next.js 15 with App Router)
-- ✅ **Modern React Components** with shadcn/ui
-- ✅ **Authentication Context** with session management
-- ✅ **Protected Routes** and auth guards
-- ✅ **Responsive Design** with Tailwind CSS
-- ✅ **Form Validation** with react-hook-form + Zod
-- ✅ **Google OAuth Button** component
-
-### Infrastructure
-- ✅ **PostgreSQL Database** with Docker
-- ✅ **Complete Docker Setup** for development
-- ✅ **Production Deployment** guides for Fly.io + Vercel
-- ✅ **Environment Configuration** for dev/staging/prod
+## ⚡ Robust Backend
+- **.NET 9 Web API**
+- **Entity Framework Core**
+- **PostgreSQL database**
+- **Docker containerization**
+- **Email service (Resend)**
 
 ## 🚀 Quick Start
 
-### 1. Clone the Repository
+### 1. Clone & Setup
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+# Clone the repository
+git clone https://github.com/roumel00/skeleton.git
+cd skeleton-project
+
+# Setup environment
+cp .env.example .env
+# Run the fly secrets set for all the variables
 ```
 
-### 2. Environment Setup
-
-Create a `.env` file in the project root with the following variables:
-
+### 2. Start Services
 ```bash
-# =============================================================================
-# DATABASE CONFIGURATION
-# =============================================================================
-DB_USER=skeleton_user
-DB_PASSWORD=your_secure_password_here
-DB_NAME=skeleton_db
-
-# Connection string for the API (auto-constructed from above)
-CONNECTION_STRING=Host=db;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
-
-# =============================================================================
-# JWT AUTHENTICATION
-# =============================================================================
-# Generate a secure secret: openssl rand -base64 64
-JWT_SECRET=your_jwt_secret_key_here_make_it_very_long_and_secure
-JWT_ISSUER=SkeletonApi
-JWT_AUDIENCE=SkeletonFrontend
-
-# =============================================================================
-# APPLICATION URLS
-# =============================================================================
-API_BASE_URL=http://localhost:3030
-FRONTEND_BASE_URL=http://localhost:3000
-FRONTEND_DOMAIN=localhost
-CORS_ORIGIN=http://localhost:3000
-
-# =============================================================================
-# EMAIL SERVICE (Resend)
-# =============================================================================
-# Get your API key from: https://resend.com/api-keys
-RESEND_API_KEY=re_your_resend_api_key_here
-APP_FROM_EMAIL=noreply@yourdomain.com
-
-# =============================================================================
-# GOOGLE OAUTH (Optional - for social login)
-# =============================================================================
-# Get credentials from: https://console.cloud.google.com/
-GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3030/api/oauth/google/callback
-```
-
-### 3. Start the Application
-```bash
-# Start all services (database, API, frontend)
+# Start everything with Docker
 docker compose up --build
 
-# Or for development with auto-restart:
-docker compose down && docker compose up --build
+# Access your apps
+# Frontend: localhost:3000
+# API: localhost:3030
 ```
-
-### 4. Access Your Application
-- **Frontend**: http://localhost:3000
-- **API**: http://localhost:3030
-- **Database**: localhost:5432
 
 ## 📁 Project Structure
 ```
 skeleton-project/
 ├── apps/
-│   ├── Api/                    # .NET 9 Web API Backend
-│   │   ├── Controllers/        # API endpoints (Auth, OAuth, Test)
-│   │   ├── Data/              # Database context and migrations
-│   │   ├── Entities/          # Database models (User, PasswordResetToken)
+│   ├── Api/                    # .NET 9 Web API
+│   │   ├── Controllers/        # API endpoints
+│   │   ├── Data/              # Database context
+│   │   ├── Entities/          # Database entities
+│   │   ├── Migrations/        # Database migrations
 │   │   ├── Models/            # DTOs and request/response models
-│   │   ├── Services/          # Business logic (Auth, Email, OAuth)
+│   │   ├── Services/          # Business logic
 │   │   └── Program.cs         # Application configuration
-│   └── web/                   # Next.js 15 Frontend
+│   └── web/                   # Next.js Frontend
 │       ├── app/               # App Router pages
-│       ├── components/        # Reusable UI components
-│       ├── contexts/          # React contexts (SessionProvider)
-│       └── hooks/             # Custom React hooks
+│       ├── components/        # UI components
+│       └── contexts/          # React contexts
 ├── docker-compose.yml         # Multi-container setup
 └── .env                      # Environment variables
 ```
+
+## 🚀 Ready to Build Something Amazing?
+
+This template includes everything you need to start your next project. Authentication, database, modern UI components, and deployment-ready configuration.
+
+**[Create Account]** | **[Sign In]**
 
 ## 🔧 Required Service Setup
 

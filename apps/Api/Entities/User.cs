@@ -8,9 +8,9 @@ public class User : IdentityUser
     public string LastName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public string? OAuthProvider { get; set; }
 
-    // Google OAuth fields
+    // For google users
     public string? GoogleId { get; set; }
     public string? ProfilePictureUrl { get; set; }
-    public bool IsGoogleUser { get; set; } = false;
 }

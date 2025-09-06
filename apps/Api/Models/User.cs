@@ -50,7 +50,7 @@ public class UserInfoDto
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
-    public bool IsGoogleUser { get; set; } = false;
+    public string? OAuthProvider { get; set; }
     public string? ProfilePictureUrl { get; set; }
 }
 
