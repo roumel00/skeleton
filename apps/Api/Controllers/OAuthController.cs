@@ -24,7 +24,10 @@ public class OAuthController : ControllerBase
     }
 
     [HttpGet("google/callback")]
-    public async Task<ActionResult> GoogleCallback([FromQuery] string? code, [FromQuery] string? error)
+    public async Task<ActionResult> GoogleCallback(
+        [FromQuery] string? code, 
+        [FromQuery] string? state, 
+        [FromQuery] string? error)
     {
         if (!string.IsNullOrEmpty(error))
         {
@@ -38,7 +41,13 @@ public class OAuthController : ControllerBase
             return Redirect($"{frontendUrl}/login?error=no_code");
         }
 
-        var result = await _authenticationService.HandleOAuthCallbackAsync("google", code);
+        if (string.IsNullOrEmpty(state))
+        {
+            var frontendUrl = _configuration["Frontend:BaseUrl"] ?? "http://localhost:3000";
+            return Redirect($"{frontendUrl}/login?error=invalid_state");
+        }
+
+        var result = await _authenticationService.HandleOAuthCallbackAsync("google", code, state);
 
         var frontendBaseUrl = _configuration["Frontend:BaseUrl"] ?? "http://localhost:3000";
 

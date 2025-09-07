@@ -20,7 +20,8 @@ public class TokenService : ITokenService
     public string GenerateJwtToken(User user)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
-        var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"] ?? "YourSuperSecretKeyHere123!@#");
+        var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"] 
+            ?? throw new InvalidOperationException("JWT SecretKey is not configured"));
         var issuer = jwtSettings["Issuer"] ?? "YourApp";
         var audience = jwtSettings["Audience"] ?? "YourAppUsers";
         var expirationHours = int.Parse(jwtSettings["ExpirationHours"] ?? "24");

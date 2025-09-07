@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Web;
 using Api.Models;
+using Api.Services;
+using System.Security;
 
 namespace Api.Services.OAuth;
 
@@ -8,13 +10,18 @@ public class GoogleOAuthProvider : IOAuthProvider
 {
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
+    private readonly IOAuthStateService _stateService;
 
     public string ProviderName => "Google";
 
-    public GoogleOAuthProvider(HttpClient httpClient, IConfiguration configuration)
+    public GoogleOAuthProvider(
+        HttpClient httpClient, 
+        IConfiguration configuration,
+        IOAuthStateService stateService)
     {
         _httpClient = httpClient;
         _configuration = configuration;
+        _stateService = stateService;
     }
 
     public string GetAuthorizationUrl()
@@ -25,7 +32,7 @@ public class GoogleOAuthProvider : IOAuthProvider
             ?? throw new InvalidOperationException("Google OAuth RedirectUri is not configured");
         
         var scope = "openid email profile";
-        var state = Guid.NewGuid().ToString(); // In production, store this for validation
+        var state = _stateService.GenerateState();
         
         var queryParams = HttpUtility.ParseQueryString(string.Empty);
         queryParams["client_id"] = clientId;
@@ -39,8 +46,14 @@ public class GoogleOAuthProvider : IOAuthProvider
         return $"https://accounts.google.com/o/oauth2/auth?{queryParams}";
     }
 
-    public async Task<OAuthUserInfo> GetUserInfoAsync(string code)
+    public async Task<OAuthUserInfo> GetUserInfoAsync(string code, string state)
     {
+        // Validate state first
+        if (!_stateService.ValidateState(state))
+        {
+            throw new SecurityException("Invalid or expired OAuth state parameter");
+        }
+
         // Exchange code for tokens
         var tokenResponse = await ExchangeCodeForTokensAsync(code);
         if (tokenResponse == null)

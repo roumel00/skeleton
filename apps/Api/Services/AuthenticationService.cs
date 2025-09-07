@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
+using System.Security;
 using Api.Entities;
 using Api.Models;
 using Api.Data;
@@ -15,19 +16,22 @@ public class AuthenticationService : IAuthenticationService
     private readonly ApplicationDbContext _context;
     private readonly IEmailService _emailService;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
         UserManager<User> userManager,
         ITokenService tokenService,
         ApplicationDbContext context,
         IEmailService emailService,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        ILogger<AuthenticationService> logger)
     {
         _userManager = userManager;
         _tokenService = tokenService;
         _context = context;
         _emailService = emailService;
         _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto registerDto)
@@ -154,11 +158,8 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (Exception ex)
         {
-            return new AuthResponseDto
-            {
-                Success = false,
-                Message = $"An error occurred: {ex.Message}"
-            };
+            _logger.LogError(ex, "Unexpected error during login for {Email}", loginDto.Email);
+            return new AuthResponseDto { Success = false, Message = "An unexpected error occurred" };
         }
     }
 
@@ -397,12 +398,12 @@ public class AuthenticationService : IAuthenticationService
         return oauthProvider.GetAuthorizationUrl();
     }
 
-    public async Task<AuthResponseDto> HandleOAuthCallbackAsync(string provider, string code)
+    public async Task<AuthResponseDto> HandleOAuthCallbackAsync(string provider, string code, string state)
     {
         try
         {
             var oauthProvider = GetOAuthProvider(provider);
-            var userInfo = await oauthProvider.GetUserInfoAsync(code);
+            var userInfo = await oauthProvider.GetUserInfoAsync(code, state);
 
             // Find or create user
             var user = await FindOrCreateOAuthUserAsync(userInfo);
@@ -433,6 +434,14 @@ public class AuthenticationService : IAuthenticationService
                     CreatedAt = user.CreatedAt,
                     OAuthProvider = user.OAuthProvider
                 }
+            };
+        }
+        catch (SecurityException)
+        {
+            return new AuthResponseDto
+            {
+                Success = false,
+                Message = "OAuth security validation failed"
             };
         }
         catch (Exception ex)

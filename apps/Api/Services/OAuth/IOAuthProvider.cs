@@ -6,7 +6,7 @@ public interface IOAuthProvider
 {
     string ProviderName { get; }
     string GetAuthorizationUrl();
-    Task<OAuthUserInfo> GetUserInfoAsync(string code);
+    Task<OAuthUserInfo> GetUserInfoAsync(string code, string state);
 }
 
 public class OAuthUserInfo

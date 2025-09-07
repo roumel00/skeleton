@@ -13,7 +13,7 @@ public interface IAuthenticationService
     
     // OAuth methods
     string GetOAuthAuthorizationUrl(string provider);
-    Task<AuthResponseDto> HandleOAuthCallbackAsync(string provider, string code);
+    Task<AuthResponseDto> HandleOAuthCallbackAsync(string provider, string code, string state);
     
     // Session management
     void SignOut();

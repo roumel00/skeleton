@@ -50,7 +50,8 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"] ?? "AoYt7goXOJOAIm4nMWt6CpRmKVZbY0naT9XliYRIqBD2FwywsAslOw8Z290LX1j5ujWIg4A7jBfQaaiCDbF5CQ==");
+var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"] 
+    ?? throw new InvalidOperationException("JWT SecretKey is not configured"));
 
 builder.Services.AddAuthentication(options =>
 {
@@ -90,6 +91,10 @@ builder.Services.AddAuthentication(options =>
 // Register the unified authentication services
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+
+// Register OAuth state management
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IOAuthStateService, OAuthStateService>();
 
 // Register OAuth providers
 builder.Services.AddScoped<GoogleOAuthProvider>();
