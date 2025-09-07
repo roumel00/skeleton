@@ -2,7 +2,7 @@
 
 🚀 **Production-Ready Template**
 
-A complete template with .NET 9 API backend and Next.js frontend, featuring built-in authentication and Google OAuth. **Skip the boilerplate and start building features immediately.**
+A complete template with .NET 9 API backend and Next.js frontend, featuring built-in authentication and Google OAuth. **Skip the boilerplate and start building features immediately.** Checkout what it looks like [here](https://skeleton-orcin.vercel.app/)
 
 ## 🔐 Authentication System
 - **JWT Authentication** with HTTP-only cookies
