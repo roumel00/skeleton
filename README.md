@@ -30,15 +30,14 @@ A complete template with .NET 9 API backend and Next.js frontend, featuring buil
 ```bash
 # Clone the repository
 git clone https://github.com/roumel00/skeleton.git
-cd skeleton-project
+cd skeleton
 
 # Setup environment
 cp .env.example .env
 # Run the fly secrets set for all the variables
 
 # Update the database schema
-ConnectionStrings__DefaultConnection='Host=db;Port=5432;Database=your-db-name;Username=your-db-user;Password=your-db-password' \
-dotnet ef migrations add ReplaceIsGoogleUserWithOAuthProvider --context ApplicationDbContext
+ConnectionStrings__DefaultConnection='Host=db;Port=5432;Database=your-db-name;Username=your-db-user;Password=your-db-password'
 ```
 
 ### 2. Start Services
